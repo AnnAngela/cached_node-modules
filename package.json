@@ -1,0 +1,60 @@
+{
+    "name": "cached_node_modules",
+    "version": "1.0.0",
+    "description": "A GitHub Action to cache node_modules",
+    "main": "./dist/index.js",
+    "exports": {
+        ".": "./dist/index.js"
+    },
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "scripts": {
+        "lint:check": "eslint src",
+        "lint:check-ci": "eslint --exit-on-fatal-error -f @annangela/eslint-formatter-gha --max-warnings 0 ./src",
+        "lint:write": "eslint --fix src",
+        "lint:eslint.config.flat": "eslint eslint.config.js",
+        "package:production": "esbuild src/index.ts --bundle --platform=node --legal-comments=inline --outdir=dist --target=node20 --tree-shaking=true --log-limit=0 --minify --analyze",
+        "package:development": "esbuild src/index.ts --bundle --platform=node --legal-comments=inline --outdir=dist --target=node20 --tree-shaking=true --log-limit=0 --analyze=verbose",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "engines": {
+        "node": "^20.9"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AnnAngela/cached_node_modules.git"
+    },
+    "keywords": [
+        "actions",
+        "node",
+        "node_modules"
+    ],
+    "author": "AnnAngela",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/AnnAngela/cached_node_modules/issues"
+    },
+    "homepage": "https://github.com/AnnAngela/cached_node_modules#readme",
+    "devDependencies": {
+        "@annangela/eslint-formatter-gha": "^1.0.0",
+        "@annangela/eslint-plugin-prefer-reflect": "^2.1.0",
+        "@eslint/js": "^8.56.0",
+        "@stylistic/eslint-plugin": "^1.5.1",
+        "@stylistic/eslint-plugin-migrate": "^1.5.1",
+        "@types/eslint": "^8.44.9",
+        "@types/node": "^20.10.5",
+        "@typescript-eslint/eslint-plugin": "^6.15.0",
+        "@typescript-eslint/parser": "^6.15.0",
+        "esbuild": "^0.19.10",
+        "eslint": "^8.56.0",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-prefer-arrow-functions": "^3.2.4",
+        "typescript": "^5.3.3"
+    },
+    "dependencies": {
+        "@actions/cache": "^3.2.2",
+        "@actions/core": "^1.10.1"
+    }
+}

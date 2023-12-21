@@ -1,0 +1,37 @@
+name: Cached node_modules
+description: A GitHub Action to cache node_modules
+author: AnnAngela
+
+branding:
+  icon: save
+  color: purple
+
+inputs:
+  cacheKey:
+    description: The key of the cache
+    required: false
+    default: cached_node_modules-{OS_NAME}-node@{NODE_MAJOR_VERSION}-npm@{NPM_MAJOR_VERSION}-package-lock@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
+  customVariable:
+    description: The custom variable to insert to the cache key
+    required: false
+    default: ""
+  command:
+    description: The command to run for installing dependencies
+    required: false
+    default: npm ci
+  cwd:
+    description: The working directory
+    required: false
+    default: .
+  lockfilePath:
+    description: The path to the lockfile
+    required: false
+    default: package-lock.json
+
+outputs:
+  time:
+    description: "Your output description here"
+
+runs:
+  using: node20
+  main: dist/index.js

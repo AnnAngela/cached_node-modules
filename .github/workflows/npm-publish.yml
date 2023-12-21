@@ -1,0 +1,52 @@
+name: Node.js Package Publish
+
+on:
+  workflow_dispatch:
+  release:
+    types: 
+      - created
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          check-latest: true
+          registry-url: https://registry.npmjs.org/
+          cache: npm
+
+      - name: Generate cache primary key based on nodejs's and npm's version and package-lock.json's hash
+        id: version
+        shell: bash
+        run: echo "hash=node@$(node -v | grep -oP '(?<=^v)\d+')_npm@$(npm -v | grep -oP '^\d+')_package-lock@$(openssl dgst -sha3-512 package-lock.json | grep -oP '[\da-f]{128}')" >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
+      - uses: actions/cache/restore@v3
+        name: Try to restore node_modules from cache
+        id: cache
+        with:
+          path: node_modules
+          key: ${{ steps.version.outputs.hash }}
+      - name: Install dependencies if no cache for node_modules
+        run: npm ci
+        if: success() && steps.cache.outputs.cache-hit != 'true'
+      - uses: actions/cache/save@v3
+        if: success() && steps.cache.outputs.cache-hit != 'true'
+        name: Save node_modules to cache
+        with:
+          path: node_modules
+          key: ${{ steps.version.outputs.hash }}
+          
+      - name: Check environment
+        run: npx eslint --env-info
+      - name: Run eslint
+        run: npm run lint:check-ci
+      - name: Build the package
+        run: npm run package:production
+      - name: Publish the package
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

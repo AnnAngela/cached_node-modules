@@ -1,0 +1,40 @@
+name: CodeQL
+
+on:
+  push:
+    paths:
+      - "**.ts"
+      - .github/workflows/CodeQL.yaml
+  pull_request:
+    paths:
+      - "**.js"
+      - .github/workflows/CodeQL.yaml
+  merge_group:
+  workflow_dispatch:
+  schedule:
+    - cron: 15 23 * * * # Every 07:15 CST
+
+permissions:
+  actions: read
+  checks: write
+  contents: write
+  pull-requests: write
+  security-events: write
+  statuses: write
+
+jobs:
+  CodeQL:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: typescript, javascript
+          queries: +security-and-quality
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
