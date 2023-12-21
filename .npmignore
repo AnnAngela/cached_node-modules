@@ -1,6 +1,0 @@
-.cache
-.github
-node_modules
-src
-eslint.config.js
-tsconfig.json
