@@ -1,5 +1,5 @@
 {
-    "name": "cached_node_modules",
+    "name": "cached_node-modules",
     "version": "1.0.0",
     "description": "A GitHub Action to cache node_modules",
     "main": "./dist/index.js",
@@ -24,7 +24,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AnnAngela/cached_node_modules.git"
+        "url": "git+https://github.com/AnnAngela/cached_node-modules.git"
     },
     "keywords": [
         "actions",
@@ -34,9 +34,9 @@
     "author": "AnnAngela",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/AnnAngela/cached_node_modules/issues"
+        "url": "https://github.com/AnnAngela/cached_node-modules/issues"
     },
-    "homepage": "https://github.com/AnnAngela/cached_node_modules#readme",
+    "homepage": "https://github.com/AnnAngela/cached_node-modules#readme",
     "devDependencies": {
         "@annangela/eslint-formatter-gha": "^1.0.0",
         "@annangela/eslint-plugin-prefer-reflect": "^2.1.0",
