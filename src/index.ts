@@ -88,7 +88,7 @@ if (restoreCacheResult) {
     console.info("Cache saved.");
 }
 
-debug("Setting outputs...");
+console.info("Setting outputs...");
 setOutput("cacheKey", cacheKey);
-setOutput("variables", variable.getCache());
-debug("Outputs set, exit.");
+setOutput("variables", JSON.stringify(variable.getCache()));
+console.info("Outputs set, exit.");
