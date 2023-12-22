@@ -1,5 +1,5 @@
 import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
-import { getInput, setOutput, debug } from "@actions/core";
+import { getInput, setOutput, debug, startGroup, endGroup } from "@actions/core";
 import path from "path";
 import fs from "fs";
 import Variable from "./Variable.js";
@@ -58,17 +58,18 @@ for (const variableName of variableNames) {
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
 console.info("cacheKey:", cacheKey);
 
-console.info("Start to restore cache...");
+startGroup("Start to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
     timeoutInMs: 1000 * 60 * 5,
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
 debug(`restoreCacheResult: ${restoreCacheResult}`);
+endGroup();
 
 if (restoreCacheResult) {
     console.info("Cache exists and restored.");
 } else {
-    console.info("Cache does not exist, start to run command...");
+    startGroup("Cache does not exist, start to run command...");
     await spawnChildProcess(inputs.command, {
         synchronousStdout: true,
         synchronousStderr: true,
@@ -78,6 +79,7 @@ if (restoreCacheResult) {
         uploadConcurrency: 8,
     }, false);
     debug(`saveCacheResult: ${saveCacheResult}`);
+    endGroup();
     console.info("Cache saved.");
 }
 
