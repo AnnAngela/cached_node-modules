@@ -1,5 +1,5 @@
 import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
-import { getInput, setOutput, debug, startGroup, endGroup } from "@actions/core";
+import { getInput, setOutput, debug, isDebug, startGroup, endGroup } from "@actions/core";
 import path from "path";
 import fs from "fs";
 import Variable from "./Variable.js";
@@ -38,7 +38,7 @@ try {
 
 const variable = new Variable(inputs.lockfilePath, inputs.customVariable);
 
-console.info("Replacing variables...");
+(isDebug() ? startGroup : console.info)("Replacing variables...");
 const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
 debug(`[replacingVariables] matched variableNames (after removing duplicate variables): ${JSON.stringify(variableNames)}`);
 let cacheKey = inputs.cacheKey;
@@ -56,15 +56,20 @@ for (const variableName of variableNames) {
     }
 }
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
+if (isDebug()) {
+    endGroup();
+}
 console.info("cacheKey:", cacheKey);
 
-startGroup("Start to restore cache...");
+(isDebug() ? startGroup : console.info)("Start to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
     timeoutInMs: 1000 * 60 * 5,
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
 debug(`restoreCacheResult: ${restoreCacheResult}`);
-endGroup();
+if (isDebug()) {
+    endGroup();
+}
 
 if (restoreCacheResult) {
     console.info("Cache exists and restored.");
