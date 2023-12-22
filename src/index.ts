@@ -47,9 +47,9 @@ for (const variableName of variableNames) {
     debug(`[replacingVariables] \tRun on variableName: ${variableName}`);
     const trimmedVariableName = trimBrackets(variableName);
     debug(`[replacingVariables] \t\ttrimmedVariableName: ${trimmedVariableName}`);
-    if (trimmedVariableName === "customVariable" || Reflect.has(Variable.VARIABLE_MAP, trimmedVariableName)) {
+    if (trimmedVariableName === "CUSTOM_VARIABLE" || Reflect.has(Variable.VARIABLE_MAP, trimmedVariableName)) {
         debug(`[replacingVariables] \t\tVariable "${trimmedVariableName}" is in the list.`);
-        const variableValue = await variable.get(trimmedVariableName as "customVariable" | keyof typeof Variable.VARIABLE_MAP);
+        const variableValue = await variable.get(trimmedVariableName as "CUSTOM_VARIABLE" | keyof typeof Variable.VARIABLE_MAP);
         debug(`[replacingVariables] \t\tvariableValue: ${variableValue}`);
         cacheKey = cacheKey.replaceAll(variableName, variableValue);
         debug(`[replacingVariables] \t\tnew cacheKey: ${cacheKey}`);
@@ -84,3 +84,4 @@ if (restoreCacheResult) {
 debug("Setting outputs...");
 setOutput("cacheKey", cacheKey);
 setOutput("variables", variable.getCache());
+debug("Outputs set, exit.");

@@ -7,7 +7,7 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
 ### input
 
 ```yaml
-- uses: actions/setup-node@v4
+- uses: AnnAngela/cached_node-modules@v4
   with:
     # The cache key used to restore and save cache
     # You can use magic variables to generate cache key for different OS, Node.js and NPM versions

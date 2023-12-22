@@ -65,10 +65,10 @@ export default class Variable {
                 return `${patch(fullVersion)}`;
         }
     }
-    async get(variableName: keyof variableMap | "customVariable"): Promise<string> {
+    async get(variableName: keyof variableMap | "CUSTOM_VARIABLE"): Promise<string> {
         debug(`[Variable] variableName: ${variableName}`);
-        if (variableName === "customVariable") {
-            debug(`[Variable] variableName is "customVariable", returning customVariable: ${this.customVariable}`);
+        if (variableName === "CUSTOM_VARIABLE") {
+            debug(`[Variable] variableName is "CUSTOM_VARIABLE", returning customVariable: ${this.customVariable}`);
             return this.customVariable;
         }
         const command = Variable.VARIABLE_MAP[variableName];
