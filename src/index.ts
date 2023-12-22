@@ -2,6 +2,7 @@ import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
 import { getInput, setOutput, debug, isDebug, startGroup, endGroup } from "@actions/core";
 import path from "path";
 import fs from "fs";
+import timersPromises from "node:timers/promises";
 import Variable from "./Variable.js";
 import spawnChildProcess from "./spawnChildProcess.js";
 
@@ -61,15 +62,14 @@ if (isDebug()) {
 }
 console.info("cacheKey:", cacheKey);
 
-(isDebug() ? startGroup : console.info)("Start to restore cache...");
+console.info("Start to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
     timeoutInMs: 1000 * 60 * 5,
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
+await timersPromises.setTimeout(100);
 debug(`restoreCacheResult: ${restoreCacheResult}`);
-if (isDebug()) {
-    endGroup();
-}
+endGroup();
 
 if (restoreCacheResult) {
     console.info("Cache exists and restored.");

@@ -1,5 +1,5 @@
 import { exec } from "node:child_process";
-import { randomUUID } from "node:crypto";
+// import { randomUUID } from "node:crypto";
 import { debug } from "@actions/core";
 
 export interface SpawnChildProcessOptions {
@@ -15,15 +15,15 @@ export interface SpawnChildProcessOptions {
 
 const execCommand = (command: string, options?: SpawnChildProcessOptions): Promise<string> => new Promise((res, rej) => {
     debug(`[spawnChildProcess] Start to run command: ${command}, options: ${JSON.stringify(options)}`);
-    let uuid: string | undefined;
+    /* let uuid: string | undefined;
     if (options?.synchronousStdout || options?.synchronousStderr) {
         uuid = randomUUID();
         console.info(`::stop-commands::${uuid}`);
-    }
+    } */
     const childProcess = exec(command, (error, stdout) => {
-        if (uuid) {
+        /* if (uuid) {
             console.info(`::${uuid}::`);
-        }
+        } */
         if (error) {
             debug(`[spawnChildProcess] Command "${command}" failed.`);
             rej(error);
