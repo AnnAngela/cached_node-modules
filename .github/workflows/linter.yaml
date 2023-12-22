@@ -5,6 +5,7 @@ on:
     paths:
       - src/**/*
       - .*.yaml
+      - eslint.config.js
       - .github/workflows/linter.yaml
       - package.json
       - package-lock.json
@@ -13,6 +14,7 @@ on:
     paths:
         - src/**/*
         - .*.yaml
+        - eslint.config.js
         - .github/workflows/linter.yaml
         - package.json
         - package-lock.json
