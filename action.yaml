@@ -10,7 +10,7 @@ inputs:
   cacheKey:
     description: The key of the cache
     required: false
-    default: cached_node-modules-{OS_NAME}-node@{NODE_MAJOR_VERSION}-npm@{NPM_MAJOR_VERSION}-package-lock@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
+    default: cached_node-modules-{OS_NAME}-node@{NODE_VERSION_MAJOR}-npm@{NPM_VERSION_MAJOR}-package-lock@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
   customVariable:
     description: The custom variable to insert to the cache key
     required: false
@@ -29,8 +29,10 @@ inputs:
     default: package-lock.json
 
 outputs:
-  time:
-    description: "Your output description here"
+  cacheKey:
+    description: "The parsed cacheKey"
+  variables:
+    description: "A JSON string contains all the variables used in `cacheKey`"
 
 runs:
   using: node20

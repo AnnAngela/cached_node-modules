@@ -4,8 +4,8 @@
         "lib": [
             "es2023", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
         ],
-        "module": "node16", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
-        "moduleResolution": "node16", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
+        "module": "Node16", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
+        "moduleResolution": "Node16", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
         "removeComments": true,
         "outDir": "dist/",
         "alwaysStrict": true,

@@ -2,7 +2,7 @@ import stylistic from "@stylistic/eslint-plugin";
 import stylisticMigratePlugin from "@stylistic/eslint-plugin-migrate";
 import preferReflectPlugin from "@annangela/eslint-plugin-prefer-reflect";
 import preferArrowFunctionsPlugin from "eslint-plugin-prefer-arrow-functions";
-import nodePlugin from "eslint-plugin-node";
+import nodePlugin from "eslint-plugin-n";
 import typescriptPlugin from "@typescript-eslint/eslint-plugin";
 import typescriptParser from "@typescript-eslint/parser";
 import eslintJS from "@eslint/js";
@@ -33,29 +33,19 @@ const config = [
                 sourceType: "module",
             },
             globals: {
-                ...nodePlugin.configs.recommended.globals,
+                ...nodePlugin.configs["flat/recommended-module"].languageOptions.globals,
             },
         },
         plugins: {
             ...stylisticPlugin,
-            node: nodePlugin,
+            ...nodePlugin.configs["flat/recommended-module"].plugins,
             "@stylistic/migrate": stylisticMigratePlugin,
             "@annangela/prefer-reflect": preferReflectPlugin,
             "prefer-arrow-functions": preferArrowFunctionsPlugin,
         },
         rules: {
             ...eslintJS.configs.recommended.rules,
-            ...nodePlugin.configs.recommended.rules,
-            "node/no-unsupported-features/es-syntax": "off",
-            "node/no-missing-import": [
-                "error",
-                {
-                    allowModules: [
-                        "@typescript-eslint/eslint-plugin",
-                        "@typescript-eslint/parser",
-                    ],
-                },
-            ],
+            ...nodePlugin.configs["flat/recommended-module"].rules,
             ...stylisticPluginRules,
             "@stylistic/migrate/migrate": "error",
             "@stylistic/brace-style": "error",
@@ -175,13 +165,13 @@ const config = [
             "src/**/*.ts",
         ],
         languageOptions: {
-            ecmaVersion: 2022, // Node 18 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
+            ecmaVersion: 2022, // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
             parser: typescriptParser,
             parserOptions: {
-                ecmaVersion: 2022, // Node 18 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
+                ecmaVersion: 2022, // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
                 project: "tsconfig.json",
                 lib: [
-                    "es2023", // Node 18 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
+                    "es2023", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
                 ],
             },
         },
@@ -192,9 +182,13 @@ const config = [
             ...typescriptPlugin.configs["eslint-recommended"].rules,
             ...typescriptPlugin.configs["strict-type-checked"].rules,
             ...typescriptPlugin.configs["stylistic-type-checked"].rules,
-            "i18n-text/no-en": "off",
-            "prettier/prettier": "off",
             "@stylistic/lines-between-class-members": "off",
+            "@typescript-eslint/prefer-nullish-coalescing": [
+                "error",
+                {
+                    ignoreConditionalTests: true,
+                },
+            ],
         },
     },
 ];
