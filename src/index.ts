@@ -89,3 +89,6 @@ console.info("Setting outputs...");
 setOutput("cacheKey", cacheKey);
 setOutput("variables", JSON.stringify(variable.getCache()));
 console.info("Outputs set, exit.");
+await timersPromises.setTimeout(3000);
+// eslint-disable-next-line n/no-process-exit
+process.exit(0);
