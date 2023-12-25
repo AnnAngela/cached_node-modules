@@ -1,5 +1,5 @@
 import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
-import { getInput, setOutput, debug, isDebug, startGroup, endGroup } from "@actions/core";
+import { getInput, setOutput, debug, startGroup, endGroup } from "@actions/core";
 import path from "path";
 import fs from "fs";
 import timersPromises from "node:timers/promises";
@@ -36,10 +36,11 @@ try {
         cause,
     });
 }
+console.info("Lockfile exists and can be read.");
 
 const variable = new Variable(inputs.lockfilePath, inputs.customVariable);
 
-(isDebug() ? startGroup : console.info)("Replacing variables...");
+console.info("Replacing variables...");
 const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
 debug(`[replacingVariables] matched variableNames (after removing duplicate variables): ${JSON.stringify(variableNames)}`);
 let cacheKey = inputs.cacheKey;
@@ -57,19 +58,15 @@ for (const variableName of variableNames) {
     }
 }
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
-if (isDebug()) {
-    endGroup();
-}
-console.info("cacheKey:", cacheKey);
+console.info("Variables replaced, cacheKey:", cacheKey);
 
-console.info("Start to restore cache...");
+console.info("Try to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
     timeoutInMs: 1000 * 60 * 5,
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
 await timersPromises.setTimeout(100);
 debug(`restoreCacheResult: ${restoreCacheResult}`);
-endGroup();
 
 if (restoreCacheResult) {
     console.info("Cache exists and restored.");
