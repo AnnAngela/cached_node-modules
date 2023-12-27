@@ -77,7 +77,8 @@ if (restoreCacheResult) {
         synchronousStdout: true,
         synchronousStderr: true,
     });
-    console.info("Command finished, start to save cache...");
+    endGroup();
+    startGroup("Command finished, start to save cache...");
     const saveCacheResult = await saveCache([nodeModulesPath], cacheKey, {
         uploadConcurrency: 8,
     }, false);
