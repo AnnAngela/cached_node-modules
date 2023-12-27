@@ -19,7 +19,8 @@
         "package:development": "esbuild src/index.ts --bundle --platform=node --format=esm --legal-comments=inline --outdir=dist --target=node20 --tree-shaking=true --log-limit=0 --analyze=verbose",
         "package:ncc": "ncc build src/index.ts --out dist --minify",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "ci": "rm -rf node_modules && npm ci"
+        "ci": "rm -rf node_modules && npm ci",
+        "tag": "node scripts/newTag.js"
     },
     "engines": {
         "node": "^20.9"

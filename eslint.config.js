@@ -155,11 +155,6 @@ const config = [
             camelcase: "error",
         },
     },
-    { // For this file
-        files: [
-            "eslint.config.js",
-        ],
-    },
     { // For TypeScript files in src/
         files: [
             "src/**/*.ts",

@@ -30,7 +30,7 @@ const execCommand = (command: string, options?: SpawnChildProcessOptions): Promi
         } else {
             const result = stdout.trim();
             debug(`[spawnChildProcess] Command "${command}" succeeded, result: ${result}`);
-            res(stdout.trim());
+            res(result);
         }
     });
     if (options?.synchronousStdout) {
