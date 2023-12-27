@@ -3,11 +3,13 @@ name: CodeQL
 on:
   push:
     paths:
-      - "**.ts"
+      - src/**/*
+      - scripts/**/*
       - .github/workflows/CodeQL.yaml
   pull_request:
     paths:
-      - "**.js"
+      - src/**/*
+      - scripts/**/*
       - .github/workflows/CodeQL.yaml
   merge_group:
   workflow_dispatch:
@@ -34,6 +36,9 @@ jobs:
         with:
           languages: typescript, javascript
           queries: +security-and-quality
+          config: |
+            paths-ignore:
+              - dist/
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
       - name: Perform CodeQL Analysis
