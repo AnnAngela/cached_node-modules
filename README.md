@@ -180,7 +180,7 @@ steps:
   run: echo "commit=$(git log -1 --format="%H" -- patches)" >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
 - uses: AnnAngela/cached_node-modules@v1
   with:
-    customVariable: :patches@{steps.get-patches-commit-short.outputs.commit}
+    customVariable: :patches@{{ steps.get-patches-commit-short.outputs.commit }}
 
 - run: npm test
 ```
