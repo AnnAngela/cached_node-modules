@@ -60,13 +60,14 @@ for (const variableName of variableNames) {
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
 console.info("Variables replaced, cacheKey:", cacheKey);
 
-console.info("Try to restore cache...");
+startGroup("Try to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
     timeoutInMs: 1000 * 60 * 5,
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
 await timersPromises.setTimeout(100);
 debug(`restoreCacheResult: ${restoreCacheResult}`);
+endGroup();
 
 if (restoreCacheResult) {
     console.info("Cache exists and restored.");
