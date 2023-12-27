@@ -47,9 +47,9 @@ You can get these outputs from the action:
 
   Example: `cached_node-modules:linux:node@20_x64:npm@10:package-lock@1a2b3c4`
 
-* `variables`: A JSON string contains all the variables used in `cacheKey`
+* `variables`: A JSON string contains all the variables **used** in `cacheKey` (also included the variables used internally)
 
-  Example: `{"OS_NAME":"linux","NODE_VERSION_MAJOR":"20","NODE_ARCH":"x64","NPM_VERSION_MAJOR":"10","LOCKFILE_GIT_COMMIT_SHORT":"1a2b3c4"}`
+  Example: `{"OS_NAME":"linux","NODE_VERSION":"v20.10.0","NODE_VERSION_MAJOR":"20","NODE_ARCH":"x64","NPM_VERSION":"10.2.3","NPM_VERSION_MAJOR":"10","LOCKFILE_GIT_COMMIT_SHORT":"1a2b3c4"}`
 
 ## Magic Variables
 

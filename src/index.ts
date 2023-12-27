@@ -86,8 +86,11 @@ if (restoreCacheResult) {
 }
 
 console.info("Setting outputs...");
+console.info("\tcacheKey:", cacheKey);
 setOutput("cacheKey", cacheKey);
-setOutput("variables", JSON.stringify(variable.getCache()));
+const variables = JSON.stringify(variable.getCache());
+console.info("\tvariables:", variables);
+setOutput("variables", variables);
 console.info("Outputs set, exit.");
 await timersPromises.setTimeout(3000);
 // eslint-disable-next-line n/no-process-exit
