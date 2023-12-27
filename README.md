@@ -15,6 +15,7 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
     cacheKey: cached_node-modules:{OS_NAME}:node@{NODE_VERSION_MAJOR}_{NODE_ARCH}:npm@{NPM_VERSION_MAJOR}:package-lock@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
 
     # Used to fill the `CUSTOM_VARIABLE` variable to make the cache key unique
+    # See Section "Custom Variables" below to learn more
     customVariable: ''
 
     # The command to run if no cache found, usually `npm ci` or `yarn install --frozen-lockfile` or `pnpm install`
@@ -56,6 +57,8 @@ You can get these outputs from the action:
 You can use these magic variables in the `cacheKey` to generate different cache keys for different OS, Node.js and NPM versions.
 
 **Note**: These variables are fetched from the Node.js binary from `actions/setup-node` or from host runner. For example, if you setup node 16 via `actions/setup-node`, you will get `16` for `NODE_VERSION_MAJOR`.
+
+<details><summary>Magic Variables List</summary>
 
 * `{OS_NAME}`:
 
@@ -158,6 +161,29 @@ You can use these magic variables in the `cacheKey` to generate different cache 
   Description: Your `customVariable` input, can be empty
 
   Example: (empty)
+
+</details>
+
+## Custom Variables
+
+You can use this to prevent incompatible cache. For example, you can use these config to prevent outdated cache for updated patches used for [patch-package](https://www.npmjs.com/package/patch-package):
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: 20
+
+# Get the commit hash of the patches folder
+- id: get-patches-commit-short
+  run: echo "commit=$(git log -1 --format="%H" -- patches)" >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
+- uses: AnnAngela/cached_node-modules@v1
+  with:
+    customVariable: :patches@{steps.get-patches-commit-short.outputs.commit}
+
+- run: npm test
+```
 
 ## Best Practices
 
