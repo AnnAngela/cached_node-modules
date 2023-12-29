@@ -46,7 +46,7 @@ await fs.promises.writeFile("package.json", JSON.stringify(packageConfig, null, 
 
 console.log("Committing changes...");
 await execCommand("git add package.json", { synchronousStderr: true, synchronousStdout: true });
-await execCommand(`git commit -am ${tag}`, { synchronousStderr: true, synchronousStdout: true });
+await execCommand(`git commit -Sam ${tag}`, { synchronousStderr: true, synchronousStdout: true });
 
 console.log("Tagging...");
 await execCommand(`git tag -s ${tag} -m ${tag}`, { synchronousStderr: true, synchronousStdout: true });
