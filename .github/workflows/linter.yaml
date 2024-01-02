@@ -64,4 +64,4 @@ jobs:
       - name: Run eslint
         run: npm run lint:check-ci
       - name: Test packaging
-        run: npm run package:development
+        run: npm run package
