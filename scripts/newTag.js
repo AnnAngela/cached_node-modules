@@ -40,13 +40,13 @@ const tagMajor = major(tag);
 console.log(`tag: ${tag}`);
 console.log(`tagMajor: ${tagMajor}`);
 
-packageConfig.version = tag;
+packageConfig.version = tag.replace(/^v/, "");
 console.log("Updating package.json with new version...");
 await fs.promises.writeFile("package.json", JSON.stringify(packageConfig, null, 4), { encoding: "utf-8" });
 
 console.log("Committing changes...");
 await execCommand("git add package.json", { synchronousStderr: true, synchronousStdout: true });
-await execCommand(`git commit -Sam ${tag}`, { synchronousStderr: true, synchronousStdout: true });
+await execCommand(`git commit -S -a -m ${tag}`, { synchronousStderr: true, synchronousStdout: true });
 
 console.log("Tagging...");
 await execCommand(`git tag -s ${tag} -m ${tag}`, { synchronousStderr: true, synchronousStdout: true });
