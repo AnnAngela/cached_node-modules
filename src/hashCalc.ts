@@ -8,9 +8,14 @@ export const algorithmMap = {
     SHA3_512: "sha3-512",
 };
 
-export const hashCalc = async (filePath: string, algorithm: keyof typeof algorithmMap) => {
-    const fileContent = await fs.promises.readFile(filePath);
+export const hashCalc = async (filePath: string, algorithm: keyof typeof algorithmMap): Promise<string> => new Promise((res, rej) => {
+    const fileStream = fs.createReadStream(filePath);
     const hash = crypto.createHash(algorithmMap[algorithm]);
-    hash.update(fileContent);
-    return hash.digest("hex");
-};
+    fileStream.on("data", (data) => {
+        hash.update(data);
+    });
+    fileStream.on("end", () => {
+        res(hash.digest("hex"));
+    });
+    fileStream.on("error", rej);
+});
