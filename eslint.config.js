@@ -36,5 +36,13 @@ const config = [
         ],
         ignores,
     },
+    // Run in trusted environments
+    {
+        rules: {
+            "security/detect-non-literal-fs-filename": "off",
+            "security/detect-object-injection": "off",
+            "security/detect-child-process": "off",
+        },
+    },
 ];
 export default config;

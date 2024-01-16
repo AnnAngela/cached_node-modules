@@ -20,6 +20,7 @@ const execCommand = (command: string, options?: SpawnChildProcessOptions): Promi
         uuid = randomUUID();
         console.info(`::stop-commands::${uuid}`);
     } */
+    // eslint-disable-next-line promise/prefer-await-to-callbacks
     const childProcess = exec(command, (error, stdout) => {
         /* if (uuid) {
             console.info(`::${uuid}::`);
