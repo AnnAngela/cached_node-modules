@@ -2,11 +2,10 @@ name: publish
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: tag
-        required: true
-        type: string
+  push:
+    paths:
+      - package.json
+      - .github/workflows/publish.yaml
 
 
 env:
@@ -35,6 +34,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           show-progress: false
+
+      - name: Fetch tag
+        id: tag
+        run: |
+          echo "TAG=v$(npm pkg get version)" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+      - name: Test if the branch exist
+        id: testIfExist
+        run: |
+          if gh api repos/${{ github.repository_owner }}/${{ github.repository_owner }}/branches/${{ steps.tag.outputs.TAG }} >/dev/null 2>&1; then
+            echo "EXIST=true" >> $GITHUB_OUTPUT
+          else
+            echo "EXIST=false" >> $GITHUB_OUTPUT
+          fi
+          cat $GITHUB_OUTPUT
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -50,20 +65,13 @@ jobs:
       - name: Run eslint
         run: npm run lint:check-ci
 
-      - name: Format tag
-        id: tag
-        env:
-          tag: ${{ inputs.tag }}
-        run: |
-          tag_without_prefix=${tag#v}
-          echo "TAG=$tag_without_prefix" >> $GITHUB_OUTPUT
-          echo "TAG_WITH_PREFIX=v$tag_without_prefix" >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
       - name: Create new branch
+        if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
-          git checkout -b ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
-          git push origin ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
+          git checkout -b ${{ steps.tag.outputs.TAG }}
+          git push origin ${{ steps.tag.outputs.TAG }}
       - name: Prepare Git
+        if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           git config --global user.email $GHA_BOT_GIT_EMAIL
           git config --global user.name $GHA_BOT_GIT_NAME
@@ -74,13 +82,16 @@ jobs:
           git config --global push.autoSetupRemote true
           echo "!dist" >> .gitignore
       - name: Run package
+        if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           npm run package
           git add .
-          git commit -am "feat: package ${{ steps.tag.outputs.TAG_WITH_PREFIX }}"
+          git commit -am "feat: package ${{ steps.tag.outputs.TAG }}"
       - name: Make tag
+        if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
-          npm version --git-tag-version -m "release: %s" ${{ steps.tag.outputs.TAG }}
+          git tag -m "release: ${{ steps.tag.outputs.TAG }}" ${{ steps.tag.outputs.TAG }}
       - name: Push new tag
+        if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           git push --follow-tags
