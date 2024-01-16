@@ -1,0 +1,69 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: tag
+        required: true
+        type: string
+
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  deployments: read
+  issues: write
+  discussions: read
+  packages: read
+  pages: read
+  pull-requests: read
+  repository-projects: read
+  security-events: write
+  statuses: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          check-latest: true
+          cache: npm
+
+      - name: Installing the dependencies
+        uses: AnnAngela/cached_node-modules@v1
+
+      - name: Check environment
+        run: npx eslint --env-info
+      - name: Run eslint
+        run: npm run lint:check-ci
+      
+      - name: Format tag
+        id: tag
+        env:
+          tag: ${{ inputs.tag }}
+        run: |
+          tag_without_prefix=${tag#v}
+          echo "TAG=$tag_without_prefix" >> $GITHUB_OUTPUT
+          echo "TAG_WITH_PREFIX=v$tag_without_prefix" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+      - name: Create new branch named ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
+        run: |
+          git checkout -b ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
+          git push origin ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
+      - name: Make tag
+        run: |
+          npm version --git-tag-version -m "release: %s" ${{ steps.tag.outputs.TAG }}
+      - name: Push new tag
+        run: |
+          git push --follow-tags

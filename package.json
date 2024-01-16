@@ -15,7 +15,7 @@
         "lint:check-ci": "eslint --exit-on-fatal-error -f ./node_modules/@annangela/eslint-formatter-gha/dist/index.js --max-warnings 0 .",
         "lint:write": "eslint --fix .",
         "package": "ncc build src/index.ts --out dist --minify",
-        "preversion": "npm run package && echo !dist >> .gitignore",
+        "preversion": "npm run package && echo '!dist' >> .gitignore",
         "test": "echo \"Error: no test specified\" && exit 1",
         "ci": "rm -rf node_modules && npm ci",
         "tag": "node scripts/newTag.js"
