@@ -74,7 +74,10 @@ jobs:
           git config --global push.autoSetupRemote true
           echo "!dist" >> .gitignore
       - name: Run package
-        run: npm run package
+        run: |
+          npm run package
+          git add .
+          git commit -am "feat: package ${{ steps.tag.outputs.TAG_WITH_PREFIX }}"
       - name: Make tag
         run: |
           npm version --git-tag-version -m "release: %s" ${{ steps.tag.outputs.TAG }}
