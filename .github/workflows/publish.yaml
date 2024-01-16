@@ -43,7 +43,7 @@ jobs:
       - name: Test if the branch exist
         id: testIfExist
         run: |
-          if gh api repos/${{ github.repository_owner }}/${{ github.repository }}/branches/${{ steps.tag.outputs.TAG }} >/dev/null 2>&1; then
+          if gh api repos/${{ github.repository }}/branches/${{ steps.tag.outputs.TAG }} >/dev/null 2>&1; then
             echo "EXIST=true" >> $GITHUB_OUTPUT
           else
             echo "EXIST=false" >> $GITHUB_OUTPUT
