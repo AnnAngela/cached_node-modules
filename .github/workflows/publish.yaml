@@ -49,16 +49,7 @@ jobs:
         run: npx eslint --env-info
       - name: Run eslint
         run: npm run lint:check-ci
-      
-      - name: Prepare Git
-        run: |
-          git config --global user.email $GHA_BOT_GIT_EMAIL
-          git config --global user.name $GHA_BOT_GIT_NAME
-          git config --global author.email $GHA_BOT_GIT_EMAIL
-          git config --global author.name $GHA_BOT_GIT_NAME
-          git config --global committer.email $GHA_BOT_GIT_EMAIL
-          git config --global committer.name $GHA_BOT_GIT_NAME
-          git config --global push.autoSetupRemote true
+
       - name: Format tag
         id: tag
         env:
@@ -68,10 +59,22 @@ jobs:
           echo "TAG=$tag_without_prefix" >> $GITHUB_OUTPUT
           echo "TAG_WITH_PREFIX=v$tag_without_prefix" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
-      - name: Create new branch named ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
+      - name: Create new branch
         run: |
           git checkout -b ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
           git push origin ${{ steps.tag.outputs.TAG_WITH_PREFIX }}
+      - name: Prepare Git
+        run: |
+          git config --global user.email $GHA_BOT_GIT_EMAIL
+          git config --global user.name $GHA_BOT_GIT_NAME
+          git config --global author.email $GHA_BOT_GIT_EMAIL
+          git config --global author.name $GHA_BOT_GIT_NAME
+          git config --global committer.email $GHA_BOT_GIT_EMAIL
+          git config --global committer.name $GHA_BOT_GIT_NAME
+          git config --global push.autoSetupRemote true
+          echo "!dist" >> .gitignore
+      - name: Run package
+        run: npm run package
       - name: Make tag
         run: |
           npm version --git-tag-version -m "release: %s" ${{ steps.tag.outputs.TAG }}
