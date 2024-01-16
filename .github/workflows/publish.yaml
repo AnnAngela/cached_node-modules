@@ -38,7 +38,7 @@ jobs:
       - name: Fetch tag
         id: tag
         run: |
-          echo "TAG=v$(npm pkg get version)" >> $GITHUB_OUTPUT
+          echo "TAG=v$(npm pkg get version --json | jq -r)" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
       - name: Test if the branch exist
         id: testIfExist
