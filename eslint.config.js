@@ -1,16 +1,40 @@
-import { baseConfig, typescriptConfig } from "@annangela/eslint-config";
+import { configs } from "@annangela/eslint-config";
+/**
+ * @type { import("eslint").Linter.FlatConfigFileSpec }
+ */
+const ignores = [
+    "**/dist/**",
+    "**/.*/**",
+    "node_modules",
+];
 /**
  * @type { import("eslint").Linter.FlatConfig[] }
  */
 const config = [
-    { // Default config
-        ...baseConfig,
-    },
-    { // For TypeScript files in src/
+    // base
+    {
+        ...configs.base,
         files: [
-            "src/**/*.ts",
+            "**/*.js",
+            "**/*.ts",
         ],
-        ...typescriptConfig,
+        ignores,
+    },
+    {
+        ...configs.node,
+        files: [
+            "**/*.js",
+            "**/*.ts",
+        ],
+        ignores,
+    },
+    // For TypeScript files
+    {
+        ...configs.typescript,
+        files: [
+            "**/*.ts",
+        ],
+        ignores,
     },
 ];
 export default config;

@@ -11,11 +11,11 @@
     ],
     "type": "module",
     "scripts": {
-        "lint:check": "eslint src",
-        "lint:check-ci": "eslint --exit-on-fatal-error -f @annangela/eslint-formatter-gha --max-warnings 0 ./src",
-        "lint:write": "eslint --fix src",
-        "lint:eslint.config.flat": "eslint eslint.config.js",
+        "lint:check": "eslint .",
+        "lint:check-ci": "eslint --exit-on-fatal-error -f ./node_modules/@annangela/eslint-formatter-gha/dist/index.js --max-warnings 0 .",
+        "lint:write": "eslint --fix .",
         "package": "ncc build src/index.ts --out dist --minify",
+        "preversion": "npm run package && echo !dist >> .gitignore",
         "test": "echo \"Error: no test specified\" && exit 1",
         "ci": "rm -rf node_modules && npm ci",
         "tag": "node scripts/newTag.js"
@@ -39,10 +39,11 @@
     },
     "homepage": "https://github.com/AnnAngela/cached_node-modules#readme",
     "devDependencies": {
-        "@annangela/eslint-config": "^2.0.0",
+        "@annangela/eslint-config": "^4.0.4",
         "@annangela/eslint-formatter-gha": "^1.0.0",
         "@vercel/ncc": "^0.38.1",
         "eslint": "^8.56.0",
+        "ncc": "^0.3.6",
         "typescript": "^5.3.3"
     },
     "dependencies": {
