@@ -1,6 +1,6 @@
 {
     "name": "cached_node-modules",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "A GitHub Action to cache node_modules",
     "main": "./dist/index.js",
     "exports": {
