@@ -69,11 +69,6 @@ jobs:
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: npm run lint:check-ci
 
-      - name: Create new branch
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          git checkout -b ${{ steps.tag.outputs.TAG }}
-          git push origin ${{ steps.tag.outputs.TAG }}
       - name: Prepare Git
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
@@ -85,6 +80,11 @@ jobs:
           git config --global committer.name $GHA_BOT_GIT_NAME
           git config --global push.autoSetupRemote true
           echo "!dist" >> .gitignore
+      - name: Create new branch
+        if: steps.testIfExist.outputs.EXIST == 'false'
+        run: |
+          git checkout -b ${{ steps.tag.outputs.TAG }}
+          git push origin ${{ steps.tag.outputs.TAG }}
       - name: Run package
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
