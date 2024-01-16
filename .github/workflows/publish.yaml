@@ -11,6 +11,8 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GHA_BOT_GIT_NAME: github-actions[bot]
+  GHA_BOT_GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
 
 permissions:
   actions: read
@@ -48,6 +50,15 @@ jobs:
       - name: Run eslint
         run: npm run lint:check-ci
       
+      - name: Prepare Git
+        run: |
+          git config --global user.email $GHA_BOT_GIT_EMAIL
+          git config --global user.name $GHA_BOT_GIT_NAME
+          git config --global author.email $GHA_BOT_GIT_EMAIL
+          git config --global author.name $GHA_BOT_GIT_NAME
+          git config --global committer.email $GHA_BOT_GIT_EMAIL
+          git config --global committer.name $GHA_BOT_GIT_NAME
+          git config --global push.autoSetupRemote true
       - name: Format tag
         id: tag
         env:
@@ -66,13 +77,4 @@ jobs:
           npm version --git-tag-version -m "release: %s" ${{ steps.tag.outputs.TAG }}
       - name: Push new tag
         run: |
-          name="github-actions[bot]"
-          email="41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global user.email $email
-          git config --global user.name $name
-          git config --global author.email $email
-          git config --global author.name $name
-          git config --global committer.email $email
-          git config --global committer.name $name
-          git config --global push.autoSetupRemote true
           git push --follow-tags
