@@ -27,12 +27,18 @@ inputs:
     description: The path to the lockfile
     required: false
     default: package-lock.json
+  packageJsonPath:
+    description: The path to the package.json
+    required: false
+    default: package.json
 
 outputs:
   cacheKey:
-    description: "The parsed cacheKey"
+    description: The parsed cacheKey
   variables:
-    description: "A JSON string contains all the variables used in `cacheKey`"
+    description: A JSON string contains all the variables used in `cacheKey`
+  cache-hit:
+    description: Whether the cache is hit
 
 runs:
   using: node20

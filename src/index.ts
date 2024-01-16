@@ -19,13 +19,16 @@ const inputs = {
     command: getInput("command"),
     cwd: getInput("cwd"),
     lockfilePath: getInput("lockfilePath"),
+    packageJsonPath: getInput("packageJsonPath"),
 };
 
 debug(`inputs: ${JSON.stringify(inputs)}`);
 
 const lockfilePath = path.join(inputs.cwd, inputs.lockfilePath);
+const packageJsonPath = path.join(inputs.cwd, inputs.packageJsonPath);
 const nodeModulesPath = path.join(inputs.cwd, "node_modules");
 console.info("lockfilePath:", lockfilePath);
+console.info("packageJsonPath:", packageJsonPath);
 console.info("nodeModulesPath:", nodeModulesPath);
 
 try {
@@ -37,8 +40,16 @@ try {
     });
 }
 console.info("Lockfile exists and can be read.");
+try {
+    console.info("Testing if the package.json can be read...");
+    await fs.promises.access(packageJsonPath, fs.constants.R_OK);
+} catch (cause) {
+    throw new Error(`package.json "${packageJsonPath}" does not exist.`, {
+        cause,
+    });
+}
 
-const variable = new Variable(inputs.lockfilePath, inputs.customVariable);
+const variable = new Variable(lockfilePath, packageJsonPath, inputs.customVariable);
 
 console.info("Replacing variables...");
 const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
@@ -93,6 +104,9 @@ setOutput("cacheKey", cacheKey);
 const variables = JSON.stringify(variable.getCache());
 console.info("\tvariables:", variables);
 setOutput("variables", variables);
+const cacheHit = !!restoreCacheResult;
+console.info("\tcache-hit:", cacheHit);
+setOutput("cache-hit", cacheHit);
 console.info("Outputs set, exit.");
 await timersPromises.setTimeout(3000);
 // eslint-disable-next-line n/no-process-exit

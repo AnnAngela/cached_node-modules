@@ -21,6 +21,12 @@ interface variableMap {
     LOCKFILE_HASH_SHA2_512: string
     LOCKFILE_HASH_SHA3_256: string
     LOCKFILE_HASH_SHA3_512: string
+    PACKAGEJSON_GIT_COMMIT_LONG: string
+    PACKAGEJSON_GIT_COMMIT_SHORT: string
+    PACKAGEJSON_HASH_SHA2_256: string
+    PACKAGEJSON_HASH_SHA2_512: string
+    PACKAGEJSON_HASH_SHA3_256: string
+    PACKAGEJSON_HASH_SHA3_512: string
 }
 export default class Variable {
     static readonly VARIABLE_MAP: Readonly<variableMap> = {
@@ -40,15 +46,25 @@ export default class Variable {
         LOCKFILE_HASH_SHA2_512: "::LOCKFILE_HASH_SHA2_512::",
         LOCKFILE_HASH_SHA3_256: "::LOCKFILE_HASH_SHA3_256::",
         LOCKFILE_HASH_SHA3_512: "::LOCKFILE_HASH_SHA3_512::",
+        PACKAGEJSON_GIT_COMMIT_LONG: "git log --pretty=format:\"%H\" -n 1 {PACKAGEJSON_PATH}",
+        PACKAGEJSON_GIT_COMMIT_SHORT: "git log --pretty=format:\"%h\" -n 1 {PACKAGEJSON_PATH}",
+        PACKAGEJSON_HASH_SHA2_256: "::PACKAGEJSON_HASH_SHA2_256::",
+        PACKAGEJSON_HASH_SHA2_512: "::PACKAGEJSON_HASH_SHA2_512::",
+        PACKAGEJSON_HASH_SHA3_256: "::PACKAGEJSON_HASH_SHA3_256::",
+        PACKAGEJSON_HASH_SHA3_512: "::PACKAGEJSON_HASH_SHA3_512::",
     };
-    private cache: Partial<variableMap> = {};
+    private readonly cache: Partial<variableMap> = {};
     // eslint-disable-next-line prefer-arrow-functions/prefer-arrow-functions
     constructor(
         private readonly lockfilePath: string,
+        private readonly packageJsonPath: string,
         private readonly customVariable: string,
     ) { }
     getCache() {
         return Object.freeze(this.cache);
+    }
+    private replaceCommandVariables(command: string): string {
+        return command.replaceAll("{LOCKFILE_PATH}", this.lockfilePath).replaceAll("{PACKAGEJSON_PATH}", this.packageJsonPath);
     }
     private async getFromVersion(variableName: keyof variableMap): Promise<string> {
         const variant = variableName.split("_").pop() as "MAJOR" | "MINOR" | "PATCH";
@@ -64,6 +80,15 @@ export default class Variable {
             case "PATCH":
                 return `${patch(fullVersion)}`;
         }
+    }
+    private async getFromHash(variableName: keyof variableMap): Promise<string> {
+        const hashFileFromType = {
+            LOCKFILE: this.lockfilePath,
+            PACKAGEJSON: this.packageJsonPath,
+        };
+        const fileType = variableName.split("_").shift() as keyof typeof hashFileFromType;
+        const algorithm = variableName.split("_HASH_").pop() as keyof typeof algorithmMap;
+        return await hashCalc(hashFileFromType[fileType], algorithm);
     }
     async get(variableName: keyof variableMap | "CUSTOM_VARIABLE"): Promise<string> {
         debug(`[Variable] variableName: ${variableName}`);
@@ -82,46 +107,29 @@ export default class Variable {
         }
         debug(`[Variable] variableName: ${variableName} is not in cache...`);
         let result: string;
-        if (variableName.startsWith("LOCKFILE_HASH_")) {
+        if (variableName.includes("_HASH_")) {
             debug(`[Variable] variableName: ${variableName} is a hash variable, calculating hash...`);
-            let algorithm: keyof typeof algorithmMap;
-            switch (variableName) {
-                case "LOCKFILE_HASH_SHA2_256":
-                    algorithm = "SHA2_256";
-                    break;
-                case "LOCKFILE_HASH_SHA2_512":
-                    algorithm = "SHA2_512";
-                    break;
-                case "LOCKFILE_HASH_SHA3_256":
-                    algorithm = "SHA3_256";
-                    break;
-                case "LOCKFILE_HASH_SHA3_512":
-                    algorithm = "SHA3_512";
-                    break;
-                default:
-                    throw new Error(`Variable "${variableName}" is not defined.`);
-            }
-            result = await hashCalc(this.lockfilePath, algorithm);
-        } else {
-            debug(`[Variable] variableName: ${variableName} is not a hash variable, running command...`);
+            result = await this.getFromHash(variableName);
+        } else if (variableName.includes("_VERSION_")) {
+            debug(`[Variable] variableName: ${variableName} is a version variable, getting version...`);
+            result = await this.getFromVersion(variableName);
+        } else if (variableName.includes("_GIT_COMMIT_")) {
+            debug(`[Variable] variableName: ${variableName} is a git-commit variable, getting git-commit...`);
             try {
-                if (/_VERSION_[A-Z]+$/.test(variableName)) {
-                    result = await this.getFromVersion(variableName);
-                } else {
-                    result = await spawnChildProcess(command.replaceAll("{LOCKFILE_PATH}", this.lockfilePath));
-                }
+                result = await spawnChildProcess(this.replaceCommandVariables(command));
             } catch (e) {
                 const error = e as ExecException;
-                if (
-                    ["LOCKFILE_GIT_COMMIT_LONG", "LOCKFILE_GIT_COMMIT_SHORT"].includes(variableName)
-                    && error.message.includes("not a git repository")
-                ) {
-                    debug(`[Variable] variableName: ${variableName} is a git variable, but the lockfile is not in a git repository, returning \`LOCKFILE_HASH_SHA3_512\`.`);
-                    result = await this.get("LOCKFILE_HASH_SHA3_512");
+                if (error.message.includes("not a git repository")) {
+                    const newVariableName = variableName.replace(/_GIT_COMMIT_.+/, "_HASH_SHA3_512") as keyof variableMap;
+                    debug(`[Variable] variableName: ${variableName} is a git-commit variable, but the target file is not in a git repository, use new \`${newVariableName}\`.`);
+                    result = await this.get(newVariableName);
                 } else {
                     throw error;
                 }
             }
+        } else {
+            debug(`[Variable] variableName: ${variableName} is not a special variable, running command...`);
+            result = await spawnChildProcess(this.replaceCommandVariables(command));
         }
         this.cache[variableName] = result;
         debug(`[Variable] variableName ${variableName} caches result: ${result}`);

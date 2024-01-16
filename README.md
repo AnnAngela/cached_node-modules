@@ -7,7 +7,7 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
 ### input
 
 ```yaml
-- uses: AnnAngela/cached_node-modules@v4
+- uses: AnnAngela/cached_node-modules@v2
   with:
     # The cache key used to restore and save cache
     # You can use magic variables to generate cache key for different OS, Node.js and NPM versions
@@ -26,6 +26,9 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
 
     # The path to the package-lock.json or yarn.lock file, it's relative to the `cwd`
     lockfilePath: package-lock.json
+
+    # The path to the package.json file, it's relative to the `cwd`
+    packageJsonPath: package.json
 ```
 
 **Basic:**
@@ -36,21 +39,25 @@ steps:
 - uses: actions/setup-node@v4
   with:
     node-version: 20
-- uses: AnnAngela/cached_node-modules@v1
+- uses: AnnAngela/cached_node-modules@v2
 - run: npm test
 ```
 
 ### output
 
-You can get these outputs from the action:
+You can get these outputs from the action (The GitHub Actions output is always string):
 
 * `cacheKey`: The generated cache key
 
-  Example: `cached_node-modules:linux:node@20_x64:npm@10:package-lock@1a2b3c4`
+  Example: `"cached_node-modules:linux:node@20_x64:npm@10:package-lock@1a2b3c4"`
 
 * `variables`: A JSON string contains all the variables **used** in `cacheKey` (also included the variables used internally)
 
-  Example: `{"OS_NAME":"linux","NODE_VERSION":"v20.10.0","NODE_VERSION_MAJOR":"20","NODE_ARCH":"x64","NPM_VERSION":"10.2.3","NPM_VERSION_MAJOR":"10","LOCKFILE_GIT_COMMIT_SHORT":"1a2b3c4"}`
+  Example: `"{\"OS_NAME\":\"linux\",\"NODE_VERSION\":\"v20.10.0\",\"NODE_VERSION_MAJOR\":\"20\",\"NODE_ARCH\":\"x64\",\"NPM_VERSION\":\"10.2.3\",\"NPM_VERSION_MAJOR\":\"10\",\"LOCKFILE_GIT_COMMIT_SHORT\":\"1a2b3c4\"}"`
+
+* `cache-hit`: Whether the cache is hit
+
+  Example: `"true"` or `"false"`
 
 ## Magic Variables
 
@@ -156,6 +163,42 @@ You can use these magic variables in the `cacheKey` to generate different cache 
 
   Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x`
 
+* `{PACKAGEJSON_GIT_COMMIT_LONG}`:
+
+  Description: The commit hash of the package.json, return `{PACKAGEJSON_HASH_SHA3_512}` instead if not in a git repo
+
+  Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t`
+
+* `{PACKAGEJSON_GIT_COMMIT_SHORT}`:
+
+  Description: The abbreviated commit hash of the package.json, return `{PACKAGEJSON_HASH_SHA3_512}` instead if not in a git repo
+
+  Example: `1a2b3c4`
+
+* `{PACKAGEJSON_HASH_SHA2_256}`:
+
+  Description: The SHA2-256 hash of the package.json
+
+  Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l`
+
+* `{PACKAGEJSON_HASH_SHA2_512}`:
+
+  Description: The SHA2-512 hash of the package.json
+
+  Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x`
+
+* `{PACKAGEJSON_HASH_SHA3_256}`:
+
+  Description: The SHA3-256 hash of the package.json
+
+  Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l`
+
+* `{PACKAGEJSON_HASH_SHA3_512}`:
+
+  Description: The SHA3-512 hash of the package.json
+
+  Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x`
+
 * `{CUSTOM_VARIABLE}`:
 
   Description: Your `customVariable` input, can be empty
@@ -175,12 +218,9 @@ steps:
   with:
     node-version: 20
 
-# Get the commit hash of the patches folder
-- id: get-patches-commit-short
-  run: echo "commit=$(git log -1 --format="%H" -- patches)" >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
-- uses: AnnAngela/cached_node-modules@v1
+- uses: AnnAngela/cached_node-modules@v2
   with:
-    customVariable: :patches@{{ steps.get-patches-commit-short.outputs.commit }}
+    customVariable: :patches@${{ hashFiles('patches/**') }}
 
 - run: npm test
 ```
