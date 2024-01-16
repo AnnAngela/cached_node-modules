@@ -66,4 +66,13 @@ jobs:
           npm version --git-tag-version -m "release: %s" ${{ steps.tag.outputs.TAG }}
       - name: Push new tag
         run: |
+          name="github-actions[bot]"
+          email="41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.email $email
+          git config --global user.name $name
+          git config --global author.email $email
+          git config --global author.name $name
+          git config --global committer.email $email
+          git config --global committer.name $name
+          git config --global push.autoSetupRemote true
           git push --follow-tags
