@@ -56,6 +56,7 @@ export default class Variable {
     private readonly cache: Partial<variableMap> = {};
     // eslint-disable-next-line prefer-arrow-functions/prefer-arrow-functions
     constructor(
+        private readonly cwd: string,
         private readonly lockfilePath: string,
         private readonly packageJsonPath: string,
         private readonly customVariable: string,
@@ -116,7 +117,7 @@ export default class Variable {
         } else if (variableName.includes("_GIT_COMMIT_")) {
             debug(`[Variable] variableName: ${variableName} is a git-commit variable, getting git-commit...`);
             try {
-                result = await spawnChildProcess(this.replaceCommandVariables(command));
+                result = await spawnChildProcess(this.replaceCommandVariables(command), { cwd: this.cwd });
             } catch (e) {
                 const error = e as ExecException;
                 if (error.message.includes("not a git repository")) {
@@ -129,7 +130,7 @@ export default class Variable {
             }
         } else {
             debug(`[Variable] variableName: ${variableName} is not a special variable, running command...`);
-            result = await spawnChildProcess(this.replaceCommandVariables(command));
+            result = await spawnChildProcess(this.replaceCommandVariables(command), { cwd: this.cwd });
         }
         this.cache[variableName] = result;
         debug(`[Variable] variableName ${variableName} caches result: ${result}`);

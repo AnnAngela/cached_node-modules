@@ -4,16 +4,17 @@ import { debug } from "@actions/core";
 
 export interface SpawnChildProcessOptions {
     /**
-     * default is `false`
+     * @default false
      */
     synchronousStdout?: boolean
     /**
-     * default is `false`
+     * @default false
      */
     synchronousStderr?: boolean
+    cwd: string
 }
 
-const execCommand = (command: string, options?: SpawnChildProcessOptions): Promise<string> => new Promise((res, rej) => {
+const execCommand = (command: string, options: SpawnChildProcessOptions): Promise<string> => new Promise((res, rej) => {
     debug(`[spawnChildProcess] Start to run command: ${command}, options: ${JSON.stringify(options)}`);
     /* let uuid: string | undefined;
     if (options?.synchronousStdout || options?.synchronousStderr) {
@@ -21,7 +22,7 @@ const execCommand = (command: string, options?: SpawnChildProcessOptions): Promi
         console.info(`::stop-commands::${uuid}`);
     } */
     // eslint-disable-next-line promise/prefer-await-to-callbacks
-    const childProcess = exec(command, (error, stdout) => {
+    const childProcess = exec(command, { cwd: options.cwd }, (error, stdout) => {
         /* if (uuid) {
             console.info(`::${uuid}::`);
         } */
@@ -34,10 +35,10 @@ const execCommand = (command: string, options?: SpawnChildProcessOptions): Promi
             res(result);
         }
     });
-    if (options?.synchronousStdout) {
+    if (options.synchronousStdout) {
         childProcess.stdout?.pipe(process.stdout);
     }
-    if (options?.synchronousStderr) {
+    if (options.synchronousStderr) {
         childProcess.stderr?.pipe(process.stderr);
     }
 });

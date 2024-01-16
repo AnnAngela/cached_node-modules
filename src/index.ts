@@ -49,7 +49,7 @@ try {
     });
 }
 
-const variable = new Variable(lockfilePath, packageJsonPath, inputs.customVariable);
+const variable = new Variable(inputs.cwd, lockfilePath, packageJsonPath, inputs.customVariable);
 
 console.info("Replacing variables...");
 const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
@@ -87,6 +87,7 @@ if (restoreCacheResult) {
     await spawnChildProcess(inputs.command, {
         synchronousStdout: true,
         synchronousStderr: true,
+        cwd: inputs.cwd,
     });
     endGroup();
     startGroup("Command finished, start to save cache...");
