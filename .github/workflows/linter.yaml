@@ -57,7 +57,7 @@ jobs:
           cache: npm
 
       - name: Installing the dependencies
-        uses: AnnAngela/cached_node-modules@v1
+        uses: AnnAngela/cached_node-modules@v2
 
       - name: Check environment
         run: npx eslint --env-info
