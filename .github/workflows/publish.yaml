@@ -62,6 +62,13 @@ jobs:
         if: steps.testIfExist.outputs.EXIST == 'false'
         uses: AnnAngela/cached_node-modules@v1
 
+      - name: Get major tag
+        if: steps.testIfExist.outputs.EXIST == 'false'
+        id: tagMajor
+        run: |
+          echo "TAG_MAJOR=v$(node -e 'console.info(require(`semver/functions/major`)(`${{ steps.tag.outputs.TAG }}`))')" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
       - name: Check environment
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: npx eslint --env-info
@@ -95,6 +102,7 @@ jobs:
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           git tag -m "release: ${{ steps.tag.outputs.TAG }}" ${{ steps.tag.outputs.TAG }}
+          git tag -f ${{ steps.tagMajor.outputs.TAG_MAJOR }} ${{ steps.tag.outputs.TAG }}
       - name: Push new tag
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
