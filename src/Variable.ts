@@ -1,8 +1,9 @@
-import spawnChildProcess from "./spawnChildProcess.js";
-import { hashCalc, algorithmMap } from "./hashCalc.js";
 import type { ExecException } from "node:child_process";
+import path from "node:path";
 import { debug } from "@actions/core";
 import { major, minor, patch } from "semver";
+import spawnChildProcess from "./spawnChildProcess.js";
+import { hashCalc, algorithmMap } from "./hashCalc.js";
 
 interface variableMap {
     OS_NAME: string
@@ -40,21 +41,21 @@ export default class Variable {
         NPM_VERSION_MAJOR: "::NPM_VERSION_MAJOR::",
         NPM_VERSION_MINOR: "::NPM_VERSION_MINOR::",
         NPM_VERSION_PATCH: "::NPM_VERSION_PATCH::",
-        LOCKFILE_GIT_COMMIT_LONG: "git log --pretty=format:\"%H\" -n 1 {LOCKFILE_PATH}",
-        LOCKFILE_GIT_COMMIT_SHORT: "git log --pretty=format:\"%h\" -n 1 {LOCKFILE_PATH}",
+        LOCKFILE_GIT_COMMIT_LONG: "git log --pretty=format:\"%H\" -n 1 {LOCKFILE_PATH_RELATIVE_FROM_CWD}",
+        LOCKFILE_GIT_COMMIT_SHORT: "git log --pretty=format:\"%h\" -n 1 {LOCKFILE_PATH_RELATIVE_FROM_CWD}",
         LOCKFILE_HASH_SHA2_256: "::LOCKFILE_HASH_SHA2_256::",
         LOCKFILE_HASH_SHA2_512: "::LOCKFILE_HASH_SHA2_512::",
         LOCKFILE_HASH_SHA3_256: "::LOCKFILE_HASH_SHA3_256::",
         LOCKFILE_HASH_SHA3_512: "::LOCKFILE_HASH_SHA3_512::",
-        PACKAGEJSON_GIT_COMMIT_LONG: "git log --pretty=format:\"%H\" -n 1 {PACKAGEJSON_PATH}",
-        PACKAGEJSON_GIT_COMMIT_SHORT: "git log --pretty=format:\"%h\" -n 1 {PACKAGEJSON_PATH}",
+        PACKAGEJSON_GIT_COMMIT_LONG: "git log --pretty=format:\"%H\" -n 1 {PACKAGEJSON_PATH_RELATIVE_FROM_CWD}",
+        PACKAGEJSON_GIT_COMMIT_SHORT: "git log --pretty=format:\"%h\" -n 1 {PACKAGEJSON_PATH_RELATIVE_FROM_CWD}",
         PACKAGEJSON_HASH_SHA2_256: "::PACKAGEJSON_HASH_SHA2_256::",
         PACKAGEJSON_HASH_SHA2_512: "::PACKAGEJSON_HASH_SHA2_512::",
         PACKAGEJSON_HASH_SHA3_256: "::PACKAGEJSON_HASH_SHA3_256::",
         PACKAGEJSON_HASH_SHA3_512: "::PACKAGEJSON_HASH_SHA3_512::",
     };
     private readonly cache: Partial<variableMap> = {};
-    // eslint-disable-next-line prefer-arrow-functions/prefer-arrow-functions
+    // eslint-disable-next-line prefer-arrow-functions/prefer-arrow-functions -- False positive
     constructor(
         private readonly cwd: string,
         private readonly lockfilePath: string,
@@ -65,7 +66,11 @@ export default class Variable {
         return Object.freeze(this.cache);
     }
     private replaceCommandVariables(command: string): string {
-        return command.replaceAll("{LOCKFILE_PATH}", this.lockfilePath).replaceAll("{PACKAGEJSON_PATH}", this.packageJsonPath);
+        return command
+            .replaceAll("{LOCKFILE_PATH}", this.lockfilePath)
+            .replaceAll("{LOCKFILE_PATH_RELATIVE_FROM_CWD}", path.relative(this.cwd, this.lockfilePath))
+            .replaceAll("{PACKAGEJSON_PATH}", this.packageJsonPath)
+            .replaceAll("{PACKAGEJSON_PATH_RELATIVE_FROM_CWD}", path.relative(this.cwd, this.packageJsonPath));
     }
     private async getFromVersion(variableName: keyof variableMap): Promise<string> {
         const variant = variableName.split("_").pop() as "MAJOR" | "MINOR" | "PATCH";

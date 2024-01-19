@@ -27,6 +27,7 @@ debug(`inputs: ${JSON.stringify(inputs)}`);
 const lockfilePath = path.join(inputs.cwd, inputs.lockfilePath);
 const packageJsonPath = path.join(inputs.cwd, inputs.packageJsonPath);
 const nodeModulesPath = path.join(inputs.cwd, "node_modules");
+console.info("cwd:", inputs.cwd);
 console.info("lockfilePath:", lockfilePath);
 console.info("packageJsonPath:", packageJsonPath);
 console.info("nodeModulesPath:", nodeModulesPath);
