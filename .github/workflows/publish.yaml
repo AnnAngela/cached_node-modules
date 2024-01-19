@@ -108,4 +108,4 @@ jobs:
       - name: Push new tag
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
-          git push --follow-tags
+          git push -f --follow-tags
