@@ -1,7 +1,7 @@
 {
     "extends": [
-        "@annangela/eslint-config/tsconfig.base.json",
-        // "./node_modules/@annangela/eslint-config/tsconfig.json"
+        "@annangela/eslint-config/tsconfig.node20.json",
+        // "./node_modules/@annangela/eslint-config/dist/tsconfigs/tsconfig.node20.json",
     ],
     "compilerOptions": {
         "outDir": "./dist",
