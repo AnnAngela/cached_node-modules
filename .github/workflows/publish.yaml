@@ -102,7 +102,8 @@ jobs:
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           git tag -m "release: ${{ steps.tag.outputs.TAG }}" ${{ steps.tag.outputs.TAG }}
-          git tag -f ${{ steps.tagMajor.outputs.TAG_MAJOR }} ${{ steps.tag.outputs.TAG }}
+          git tag -d ${{ steps.tagMajor.outputs.TAG_MAJOR }}
+          git tag -m "release: ${{ steps.tag.outputs.TAG }}" ${{ steps.tag.outputs.TAG_MAJOR }}
       - name: Push new tag
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
