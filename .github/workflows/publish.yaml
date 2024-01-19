@@ -43,7 +43,7 @@ jobs:
       - name: Test if the branch exist
         id: testIfExist
         run: |
-          if gh api repos/${{ github.repository }}/branches/${{ steps.tag.outputs.TAG }} >/dev/null 2>&1; then
+          if gh api repos/${{ github.repository }}/branches/production/${{ steps.tag.outputs.TAG }} >/dev/null 2>&1; then
             echo "EXIST=true" >> $GITHUB_OUTPUT
           else
             echo "EXIST=false" >> $GITHUB_OUTPUT
@@ -90,8 +90,8 @@ jobs:
       - name: Create new branch
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
-          git checkout -b ${{ steps.tag.outputs.TAG }}
-          git push origin ${{ steps.tag.outputs.TAG }}
+          git checkout -b production/${{ steps.tag.outputs.TAG }}
+          git push origin production/${{ steps.tag.outputs.TAG }}
       - name: Run package
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
