@@ -41,5 +41,15 @@ await execCommand(`git commit -S -m "release: ${tag}" -- package-lock.json packa
 console.log("Pushing...");
 await execCommand("git push", { synchronousStderr: true, synchronousStdout: true });
 
-console.info("Done: https://github.com/AnnAngela/cached_node-modules/actions/workflows/publish.yaml");
+const draftReleaseURL = new URL(JSON.parse(await execCommand("npm pkg get homepage")));
+draftReleaseURL.hash = "";
+draftReleaseURL.pathname += "/releases/new";
+console.log("Draft release URL:", draftReleaseURL.toString());
+console.log("Release title:", `${tag}`);
+await execCommand(`git log --reverse --pretty=format:"* %s (%h)" v${oldTag}...${tag}`).then((changelog) => {
+    console.log("-".repeat(73));
+    console.log("Example changelog:");
+    console.info(changelog);
+    console.info("");
+}).catch(() => void 0);
 console.log("-".repeat(73));
