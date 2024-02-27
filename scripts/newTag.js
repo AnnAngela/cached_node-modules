@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline";
-import { valid, gt } from "semver";
+import { valid, gt, major } from "semver";
 import execCommand from "./modules/spawnChildProcess.js";
 
 console.info("Current package:", process.env.npm_package_name);
@@ -37,6 +37,8 @@ console.log("Bump the package version");
 await execCommand(`npm version ${tag.replace(/^v/, "")} --no-git-tag-version`, { synchronousStderr: true, synchronousStdout: true });
 await execCommand("git add package-lock.json package.json", { synchronousStderr: true, synchronousStdout: true });
 await execCommand(`git commit -S -m "release: ${tag}" -- package-lock.json package.json`, { synchronousStderr: true, synchronousStdout: true });
+await execCommand(`git tag -s -m "release: ${tag}" ${tag}`, { synchronousStderr: true, synchronousStdout: true });
+await execCommand(`git tag -f -s -m "release: ${tag}" ${major(tag)}`, { synchronousStderr: true, synchronousStdout: true });
 
 console.log("Pushing...");
 await execCommand("git push", { synchronousStderr: true, synchronousStdout: true });
