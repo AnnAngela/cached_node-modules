@@ -25,11 +25,13 @@ const inputs = {
 
 debug(`inputs: ${JSON.stringify(inputs)}`);
 
-let lockfilePath = path.join(inputs.cwd, inputs.lockfilePath);
+const lockfilePath = path.join(inputs.cwd, inputs.lockfilePath);
+let lockfileContentPath = lockfilePath;
 const packageJsonPath = path.join(inputs.cwd, inputs.packageJsonPath);
 const nodeModulesPath = path.join(inputs.cwd, "node_modules");
 console.info("cwd:", inputs.cwd);
 console.info("lockfilePath:", lockfilePath);
+console.info("lockfileContentPath:", lockfileContentPath);
 console.info("packageJsonPath:", packageJsonPath);
 console.info("nodeModulesPath:", nodeModulesPath);
 
@@ -87,11 +89,11 @@ if (lockfileParsedPath.name === "package-lock") {
         // tmpdir,
         newLockfilePath,
     } = await packageLockHandler(lockfilePath, lockfileParsedPath);
-    lockfilePath = newLockfilePath;
+    lockfileContentPath = newLockfilePath;
     // needToDelete.push(tmpdir);
 }
 
-const variable = new Variable(inputs.cwd, lockfilePath, packageJsonPath, inputs.customVariable);
+const variable = new Variable(inputs.cwd, lockfilePath, lockfileContentPath, packageJsonPath, inputs.customVariable);
 
 console.info("Replacing variables...");
 const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
