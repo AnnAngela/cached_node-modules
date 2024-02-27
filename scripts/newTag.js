@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline";
-import { valid, gt, major } from "semver";
+import { valid, gt } from "semver";
 import execCommand from "./modules/spawnChildProcess.js";
 
 console.info("Current package:", process.env.npm_package_name);
@@ -30,7 +30,6 @@ const tagList = (await execCommand("git tag -l")).split("\n");
 if (tagList.includes(tag)) {
     throw new Error(`Tag ${tag} already exists`);
 }
-const majorTag = `v${major(tag)}`;
 
 console.log(`tag: ${tag}`);
 
@@ -38,12 +37,6 @@ console.log("Bump the package version...");
 await execCommand(`npm version ${tag.replace(/^v/, "")} --no-git-tag-version`, { synchronousStderr: true, synchronousStdout: true });
 await execCommand("git add package-lock.json package.json", { synchronousStderr: true, synchronousStdout: true });
 await execCommand(`git commit -S -m "release: ${tag}" -- package-lock.json package.json`, { synchronousStderr: true, synchronousStdout: true });
-
-console.info("Tagging...");
-await execCommand(`git tag -s -m "release: ${tag}" ${tag}`, { synchronousStderr: true, synchronousStdout: true });
-await execCommand(`git tag -d ${majorTag}`, { synchronousStderr: true, synchronousStdout: true });
-await execCommand(`git push origin :refs/tags/${majorTag}`, { synchronousStderr: true, synchronousStdout: true });
-await execCommand(`git tag -s -m "release: ${tag}" ${majorTag} ${tag}^{}`, { synchronousStderr: true, synchronousStdout: true });
 
 console.log("Pushing...");
 await execCommand("git push --follow-tags", { synchronousStderr: true, synchronousStdout: true });
