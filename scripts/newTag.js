@@ -38,7 +38,7 @@ await execCommand(`npm version ${tag.replace(/^v/, "")} --no-git-tag-version`, {
 await execCommand("git add package-lock.json package.json", { synchronousStderr: true, synchronousStdout: true });
 await execCommand(`git commit -S -m "release: ${tag}" -- package-lock.json package.json`, { synchronousStderr: true, synchronousStdout: true });
 await execCommand(`git tag -s -m "release: ${tag}" ${tag}`, { synchronousStderr: true, synchronousStdout: true });
-await execCommand(`git tag -f -s -m "release: ${tag}" ${major(tag)}`, { synchronousStderr: true, synchronousStdout: true });
+await execCommand(`git tag -f -s -m "release: ${tag}" v${major(tag)}`, { synchronousStderr: true, synchronousStdout: true });
 
 console.log("Pushing...");
 await execCommand("git push --follow-tags", { synchronousStderr: true, synchronousStdout: true });
