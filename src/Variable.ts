@@ -59,7 +59,6 @@ export default class Variable {
     constructor(
         private readonly cwd: string,
         private readonly lockfilePath: string,
-        private readonly lockfileContentPath: string,
         private readonly packageJsonPath: string,
         private readonly customVariable: string,
     ) { }
@@ -90,7 +89,7 @@ export default class Variable {
     }
     private async getFromHash(variableName: keyof variableMap): Promise<string> {
         const hashFileFromType = {
-            LOCKFILE: this.lockfileContentPath,
+            LOCKFILE: this.lockfilePath,
             PACKAGEJSON: this.packageJsonPath,
         };
         const fileType = variableName.split("_").shift() as keyof typeof hashFileFromType;

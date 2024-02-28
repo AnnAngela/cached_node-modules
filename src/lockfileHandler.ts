@@ -83,6 +83,5 @@ export const packageLockHandler = async (lockfilePath: string, lockfileParsedPat
     if (lockfile.packages) {
         Reflect.deleteProperty(lockfile.packages, "");
     }
-    await jsonModule.writeFile(newLockfilePath, lockfile);
-    return { tmpdir, newLockfilePath };
+    return { tmpdir, lockfileContent: JSON.stringify(lockfile) };
 };

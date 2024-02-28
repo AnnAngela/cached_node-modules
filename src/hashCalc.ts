@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import path from "node:path";
 import crypto from "node:crypto";
+import { packageLockHandler } from "./lockfileHandler.js";
 
 export const algorithmMap = {
     SHA2_256: "sha256",
@@ -9,13 +11,23 @@ export const algorithmMap = {
 };
 
 export const hashCalc = async (filePath: string, algorithm: keyof typeof algorithmMap): Promise<string> => new Promise((res, rej) => {
-    const fileStream = fs.createReadStream(filePath);
+    /* eslint-disable promise/prefer-await-to-then */
     const hash = crypto.createHash(algorithmMap[algorithm]);
-    fileStream.on("data", (data) => {
-        hash.update(data);
-    });
-    fileStream.on("end", () => {
-        res(hash.digest("hex"));
-    });
-    fileStream.on("error", rej);
+    const lockfileParsedPath = path.parse(filePath);
+    if (lockfileParsedPath.name === "package-lock") {
+        packageLockHandler(filePath, lockfileParsedPath).then(({ lockfileContent }) => {
+            hash.update(lockfileContent);
+            res(hash.digest("hex"));
+        }).catch(rej);
+    } else {
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.on("data", (data) => {
+            hash.update(data);
+        });
+        fileStream.on("end", () => {
+            res(hash.digest("hex"));
+        });
+        fileStream.on("error", rej);
+    }
+    /* eslint-enable promise/prefer-await-to-then */
 });
