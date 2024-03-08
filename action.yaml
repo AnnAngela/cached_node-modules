@@ -31,6 +31,10 @@ inputs:
     description: The path to the package.json
     required: false
     default: package.json
+  networkErrorRetryTime:
+    description: The retry time when network error occurs while running the command, `0` means no retry
+    required: false
+    default: "3"
 
 outputs:
   cacheKey:

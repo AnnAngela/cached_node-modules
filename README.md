@@ -29,6 +29,9 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
 
     # The path to the package.json file, it's relative to the `cwd`
     packageJsonPath: package.json
+
+    # The retry time when network error occurs while running the command, `0` means no retry
+    networkErrorRetryTime: 3
 ```
 
 **Basic:**

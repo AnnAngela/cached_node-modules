@@ -20,7 +20,14 @@ const inputs = {
     cwd: getInput("cwd"),
     lockfilePath: getInput("lockfilePath"),
     packageJsonPath: getInput("packageJsonPath"),
+    networkErrorRetryTime: getInput("networkErrorRetryTime"),
 };
+const INPUT_VALIDATE: [keyof typeof inputs, (str: string) => string][] = [
+    ["networkErrorRetryTime", (str) => /^d+$/.test(str) ? str : "3"],
+];
+for (const [k, f] of INPUT_VALIDATE) {
+    inputs[k] = f(inputs[k]);
+}
 
 debug(`inputs: ${JSON.stringify(inputs)}`);
 
@@ -89,6 +96,7 @@ if (restoreCacheResult) {
         synchronousStdout: true,
         synchronousStderr: true,
         cwd: inputs.cwd,
+        retryTime: +inputs.networkErrorRetryTime,
     });
     endGroup();
     startGroup("Command finished, start to save cache...");

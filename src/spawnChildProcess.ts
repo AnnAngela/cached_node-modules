@@ -1,6 +1,7 @@
 import { exec } from "node:child_process";
 // import { randomUUID } from "node:crypto";
 import { debug } from "@actions/core";
+import networkError from "./networkError.js";
 
 export interface SpawnChildProcessOptions {
     /**
@@ -12,6 +13,10 @@ export interface SpawnChildProcessOptions {
      */
     synchronousStderr?: boolean
     cwd: string
+    /**
+     * @default 3
+     */
+    retryTime?: number
 }
 
 const execCommand = (command: string, options: SpawnChildProcessOptions): Promise<string> => new Promise((res, rej) => {
@@ -22,12 +27,24 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
         console.info(`::stop-commands::${uuid}`);
     } */
     // eslint-disable-next-line promise/prefer-await-to-callbacks
-    const childProcess = exec(command, { cwd: options.cwd }, (error, stdout) => {
+    const childProcess = exec(command, { cwd: options.cwd }, (error, stdout, stderr) => {
         /* if (uuid) {
             console.info(`::${uuid}::`);
         } */
         if (error) {
             debug(`[spawnChildProcess] Command "${command}" failed.`);
+            if (networkError.some((errorCode) => stderr.includes(errorCode))) {
+                const retryTime = options.retryTime ?? 3;
+                debug(`[spawnChildProcess] retryTime: ${retryTime}.`);
+                if (retryTime > 0) {
+                    console.info("[spawnChildProcess] Network error detected, retrying...");
+                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                    setTimeout(async () => {
+                        res(await execCommand(command, { ...options, retryTime: retryTime - 1 }));
+                    }, 5000);
+                    return;
+                }
+            }
             rej(error);
         } else {
             const result = stdout.trim();
