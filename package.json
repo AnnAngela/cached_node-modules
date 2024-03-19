@@ -39,7 +39,7 @@
     },
     "homepage": "https://github.com/AnnAngela/cached_node-modules#readme",
     "devDependencies": {
-        "@annangela/eslint-config": "^5.0.2",
+        "@annangela/eslint-config": "^5.1.0",
         "@annangela/eslint-formatter-gha": "^1.1.4",
         "@vercel/ncc": "^0.38.1",
         "eslint": "^8.57.0",
