@@ -4,55 +4,55 @@ import mkdtmp from "./mkdtmp.js";
 import jsonModule from "./jsonModule.js";
 
 type dependencyType = {
-    dev: true
-    optional?: false
-    devOptional?: false
+    dev: true;
+    optional?: false;
+    devOptional?: false;
 } | {
-    dev?: false
-    optional: true
-    devOptional?: false
+    dev?: false;
+    optional: true;
+    devOptional?: false;
 } | {
-    dev?: false
-    optional?: false
-    devOptional: true
+    dev?: false;
+    optional?: false;
+    devOptional: true;
 } | {
-    dev?: false
-    optional?: false
-    devOptional?: false
+    dev?: false;
+    optional?: false;
+    devOptional?: false;
 };
 
 /**
  * @TODO Unfinished
  */
 type packageDescriptor = {
-    version: string
-    integrity: string
-    resolved: string
-    link?: false
-    bundled?: boolean
-    requires?: Record<string, string>
-    dependencies?: Record<string, packageDescriptor>
+    version: string;
+    integrity: string;
+    resolved: string;
+    link?: false;
+    bundled?: boolean;
+    requires?: Record<string, string>;
+    dependencies?: Record<string, packageDescriptor>;
 } & dependencyType | {
-    version: string
-    integrity: string
-    inBundle: true
+    version: string;
+    integrity: string;
+    inBundle: true;
 } & dependencyType | {
-    resolved: string
-    link: true
+    resolved: string;
+    link: true;
 };
 
 /**
  * V3
  */
 interface packageLockJSON {
-    name: string
-    version: string
-    lockfileVersion: 3
-    requires?: boolean
+    name: string;
+    version: string;
+    lockfileVersion: 3;
+    requires?: boolean;
     packages?: {
-        "": packageDescriptor
-        [moduleName: string]: packageDescriptor
-    }
+        "": packageDescriptor;
+        [moduleName: string]: packageDescriptor;
+    };
 }
 
 const prepare = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath) => {

@@ -6,28 +6,28 @@ import spawnChildProcess from "./spawnChildProcess.js";
 import { hashCalc, algorithmMap } from "./hashCalc.js";
 
 interface variableMap {
-    OS_NAME: string
-    NODE_ARCH: string
-    NODE_VERSION: string
-    NODE_VERSION_MAJOR: string
-    NODE_VERSION_MINOR: string
-    NODE_VERSION_PATCH: string
-    NPM_VERSION: string
-    NPM_VERSION_MAJOR: string
-    NPM_VERSION_MINOR: string
-    NPM_VERSION_PATCH: string
-    LOCKFILE_GIT_COMMIT_LONG: string
-    LOCKFILE_GIT_COMMIT_SHORT: string
-    LOCKFILE_HASH_SHA2_256: string
-    LOCKFILE_HASH_SHA2_512: string
-    LOCKFILE_HASH_SHA3_256: string
-    LOCKFILE_HASH_SHA3_512: string
-    PACKAGEJSON_GIT_COMMIT_LONG: string
-    PACKAGEJSON_GIT_COMMIT_SHORT: string
-    PACKAGEJSON_HASH_SHA2_256: string
-    PACKAGEJSON_HASH_SHA2_512: string
-    PACKAGEJSON_HASH_SHA3_256: string
-    PACKAGEJSON_HASH_SHA3_512: string
+    OS_NAME: string;
+    NODE_ARCH: string;
+    NODE_VERSION: string;
+    NODE_VERSION_MAJOR: string;
+    NODE_VERSION_MINOR: string;
+    NODE_VERSION_PATCH: string;
+    NPM_VERSION: string;
+    NPM_VERSION_MAJOR: string;
+    NPM_VERSION_MINOR: string;
+    NPM_VERSION_PATCH: string;
+    LOCKFILE_GIT_COMMIT_LONG: string;
+    LOCKFILE_GIT_COMMIT_SHORT: string;
+    LOCKFILE_HASH_SHA2_256: string;
+    LOCKFILE_HASH_SHA2_512: string;
+    LOCKFILE_HASH_SHA3_256: string;
+    LOCKFILE_HASH_SHA3_512: string;
+    PACKAGEJSON_GIT_COMMIT_LONG: string;
+    PACKAGEJSON_GIT_COMMIT_SHORT: string;
+    PACKAGEJSON_HASH_SHA2_256: string;
+    PACKAGEJSON_HASH_SHA2_512: string;
+    PACKAGEJSON_HASH_SHA3_256: string;
+    PACKAGEJSON_HASH_SHA3_512: string;
 }
 export default class Variable {
     static readonly VARIABLE_MAP: Readonly<variableMap> = {

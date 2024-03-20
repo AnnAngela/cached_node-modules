@@ -8,17 +8,17 @@ export interface mkdtmpOptions {
      * If `true`, need to delete the temporary directory in the end.
      * @default false
      */
-    local?: boolean
+    local?: boolean;
     /**
      * If `true`, the directory may not be empty.
      * @default false
      */
-    random?: boolean
+    random?: boolean;
     /**
      * If set, the directory may not be empty.
      * @default false
      */
-    subDir?: string
+    subDir?: string;
 }
 
 export default async (options: mkdtmpOptions = {}) => {
