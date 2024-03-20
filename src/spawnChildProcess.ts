@@ -7,16 +7,16 @@ export interface SpawnChildProcessOptions {
     /**
      * @default false
      */
-    synchronousStdout?: boolean
+    synchronousStdout?: boolean;
     /**
      * @default false
      */
-    synchronousStderr?: boolean
-    cwd: string
+    synchronousStderr?: boolean;
+    cwd: string;
     /**
      * @default 3
      */
-    retryTime?: number
+    retryTime?: number;
 }
 
 const execCommand = (command: string, options: SpawnChildProcessOptions): Promise<string> => new Promise((res, rej) => {

@@ -85,6 +85,7 @@ const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undef
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
 await timersPromises.setTimeout(100);
+// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 debug(`restoreCacheResult: ${restoreCacheResult}`);
 endGroup();
 

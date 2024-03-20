@@ -18,6 +18,7 @@ export const hashCalc = async (filePath: string, algorithm: keyof typeof algorit
         packageLockHandler(filePath, lockfileParsedPath).then(({ lockfileContent }) => {
             hash.update(lockfileContent);
             res(hash.digest("hex"));
+            // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
         }).catch(rej);
     } else {
         const fileStream = fs.createReadStream(filePath);
