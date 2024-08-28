@@ -55,7 +55,6 @@ export default class Variable {
         PACKAGEJSON_HASH_SHA3_512: "::PACKAGEJSON_HASH_SHA3_512::",
     };
     private readonly cache: Partial<variableMap> = {};
-    // eslint-disable-next-line prefer-arrow-functions/prefer-arrow-functions -- False positive
     constructor(
         private readonly cwd: string,
         private readonly lockfilePath: string,

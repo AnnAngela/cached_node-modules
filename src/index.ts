@@ -1,7 +1,7 @@
 import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
 import { getInput, setOutput, debug, startGroup, endGroup } from "@actions/core";
-import path from "path";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
 import timersPromises from "node:timers/promises";
 import Variable from "./Variable.js";
 import spawnChildProcess from "./spawnChildProcess.js";
