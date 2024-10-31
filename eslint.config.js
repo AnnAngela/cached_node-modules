@@ -42,6 +42,12 @@ const config = [
             "security/detect-non-literal-fs-filename": "off",
             "security/detect-object-injection": "off",
             "security/detect-child-process": "off",
+            "n/no-unsupported-features/node-builtins": ["error", {
+                version: "^20.11 || ^22.11",
+                ignores: [
+                    "fs.promises.cp",
+                ],
+            }],
         },
     },
 ];
