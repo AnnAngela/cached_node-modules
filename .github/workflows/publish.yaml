@@ -62,7 +62,7 @@ jobs:
 
       - name: Installing the dependencies
         if: steps.testIfExist.outputs.EXIST == 'false'
-        uses: AnnAngela/cached_node-modules@v2.2.1
+        uses: AnnAngela/cached_node-modules@v2.1.0
 
       - name: Get major tag
         if: steps.testIfExist.outputs.EXIST == 'false'
