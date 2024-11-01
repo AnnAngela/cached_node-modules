@@ -41,7 +41,7 @@ const fetchFileGitCommitLong = async (filePath: string) => {
     return sha;
 };
 
-type variableFunction = (filePath: string) => Promise<string>;
+type variableFunction = (_input: string) => Promise<string>;
 export default class Variable {
     static readonly VARIABLE_MAP: Readonly<Record<keyof variableMap, variableFunction>> = {
         OS_NAME: (cwd) => spawnChildProcess("node --eval=\"console.info(process.platform)\"", { cwd }),
