@@ -35,6 +35,10 @@ inputs:
     description: The retry time when network error occurs while running the command, `0` means no retry
     required: false
     default: "3"
+  githubToken:
+    description: The GitHub token
+    required: false
+    default: ${{ secrets.GITHUB_TOKEN }}
 
 outputs:
   cacheKey:

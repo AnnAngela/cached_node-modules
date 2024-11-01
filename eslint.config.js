@@ -48,6 +48,16 @@ const config = [
                     "fs.promises.cp",
                 ],
             }],
+
+            // github api use underscores naming
+            camelcase: [
+                "error",
+                {
+                    allow: [
+                        "per_page",
+                    ],
+                },
+            ],
         },
     },
 ];

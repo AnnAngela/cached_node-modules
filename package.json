@@ -21,7 +21,7 @@
         "tag": "node scripts/newTag.js"
     },
     "engines": {
-        "node": "^20.9"
+        "node": "^20.11 || ^22.11"
     },
     "repository": {
         "type": "git",
@@ -41,6 +41,7 @@
     "devDependencies": {
         "@annangela/eslint-config": "^6.2.0",
         "@annangela/eslint-formatter-gha": "^2.1.0",
+        "@types/node": "^22.8.6",
         "@types/semver": "^7.5.8",
         "@vercel/ncc": "^0.38.2",
         "eslint": "^9.13.0",
@@ -50,6 +51,10 @@
     "dependencies": {
         "@actions/cache": "^3.2.4",
         "@actions/core": "^1.11.1",
+        "@actions/github": "^6.0.0",
+        "@octokit/auth-action": "^5.1.1",
+        "@octokit/plugin-retry": "^7.1.2",
+        "@octokit/rest": "^21.0.2",
         "semver": "^7.6.3"
     }
 }
