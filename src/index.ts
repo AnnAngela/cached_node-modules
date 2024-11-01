@@ -22,12 +22,7 @@ const inputs = {
     packageJsonPath: getInput("packageJsonPath"),
     networkErrorRetryTime: getInput("networkErrorRetryTime"),
 };
-const INPUT_VALIDATE: [keyof typeof inputs, (str: string) => string][] = [
-    ["networkErrorRetryTime", (str) => /^d+$/.test(str) ? str : "3"],
-];
-for (const [k, f] of INPUT_VALIDATE) {
-    inputs[k] = f(inputs[k]);
-}
+inputs.networkErrorRetryTime = /^d+$/.test(inputs.networkErrorRetryTime) ? inputs.networkErrorRetryTime : "3";
 
 debug(`inputs: ${JSON.stringify(inputs)}`);
 

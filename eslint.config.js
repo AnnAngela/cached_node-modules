@@ -7,6 +7,13 @@ const ignores = [
     "**/.*/**",
     "node_modules",
 ];
+const nodeConfig = configs.node;
+nodeConfig.rules["n/no-unsupported-features/node-builtins"] = ["error", {
+    version: "^20.11 || ^22.11",
+    ignores: [
+        "fs.promises.cp",
+    ],
+}];
 /**
  * @type { import("eslint").Linter.Config[] }
  */
@@ -38,18 +45,22 @@ const config = [
     },
     // Run in trusted environments
     {
+        files: [
+            "**/*.js",
+            "**/*.ts",
+        ],
         rules: {
             "security/detect-non-literal-fs-filename": "off",
             "security/detect-object-injection": "off",
             "security/detect-child-process": "off",
-            "n/no-unsupported-features/node-builtins": ["error", {
-                version: "^20.11 || ^22.11",
-                ignores: [
-                    "fs.promises.cp",
-                ],
-            }],
-
-            // github api use underscores naming
+        },
+    },
+    // github api use underscores naming
+    {
+        files: [
+            "**/*.ts",
+        ],
+        rules: {
             camelcase: [
                 "error",
                 {
