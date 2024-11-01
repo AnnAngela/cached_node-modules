@@ -33,7 +33,7 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
     # The retry time when network error occurs while running the command, `0` means no retry
     networkErrorRetryTime: 3
 
-    # The GitHub token used to fetch commit for files, usually `${{ secrets.GITHUB_TOKEN }}`
+    # The GitHub token used to fetch commit for files, usually `${{ secrets.GITHUB_TOKEN }}` or `${{ github.token }}`
     githubToken: ${{ secrets.GITHUB_TOKEN }}
 ```
 

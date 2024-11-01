@@ -38,7 +38,7 @@ inputs:
   githubToken:
     description: The GitHub token
     required: false
-    default: ${{ secrets.GITHUB_TOKEN }}
+    default: ${{ github.token }}
 
 outputs:
   cacheKey:
