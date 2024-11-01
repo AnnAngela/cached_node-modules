@@ -31,12 +31,11 @@ interface variableMap {
 
 const fetchFileGitCommitLong = async (filePath: string) => {
     debug(`[fetchFileGitCommitLong] Fetching git commit long of ${filePath}...`);
-    const commits = await octokit.repos.listCommits({
+    const { data: [{ sha }] } = await octokit.repos.listCommits({
         ...octokit.context.repo,
         path: filePath,
         per_page: 1,
     });
-    const [{ sha }] = commits.data;
     debug(`[fetchFileGitCommitLong] Fetched git commit long of ${filePath}: ${sha}`);
     return sha;
 };
