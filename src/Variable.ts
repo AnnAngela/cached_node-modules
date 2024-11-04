@@ -31,10 +31,14 @@ interface variableMap {
 
 const fetchFileGitCommitLong = async (filePath: string) => {
     debug(`[fetchFileGitCommitLong] Fetching git commit long of ${filePath}...`);
+    debug(`[fetchFileGitCommitLong] octokit.context.repo: ${JSON.stringify(octokit.context.repo)}`);
+    debug(`[fetchFileGitCommitLong] octokit.context.ref: ${JSON.stringify(octokit.context.ref)}`);
+    debug(`[fetchFileGitCommitLong] octokit.context.sha: ${JSON.stringify(octokit.context.sha)}`);
     const { data: [{ sha }] } = await octokit.repos.listCommits({
         ...octokit.context.repo,
         path: filePath,
         per_page: 1,
+        sha: octokit.context.ref,
     });
     debug(`[fetchFileGitCommitLong] Fetched git commit long of ${filePath}: ${sha}`);
     return sha;
