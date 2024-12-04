@@ -49,7 +49,7 @@
         "typescript": "^5.7.2"
     },
     "dependencies": {
-        "@actions/cache": "^3.3.0",
+        "@actions/cache": "^4.0.0",
         "@actions/core": "^1.11.1",
         "@actions/github": "^6.0.0",
         "@octokit/auth-action": "^5.1.1",
