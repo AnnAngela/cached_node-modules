@@ -19,6 +19,7 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
     customVariable: ''
 
     # The command to run if no cache found, usually `npm ci` or `yarn install --frozen-lockfile` or `pnpm install`
+    # Please be reminded that this command will be parsed by `shell-quote` so you should avoid using special characters
     command: npm ci
 
     # The working directory to run the command
