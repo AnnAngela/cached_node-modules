@@ -43,6 +43,7 @@
         "@annangela/eslint-formatter-gha": "^3.0.0",
         "@types/node": "^22.13.1",
         "@types/semver": "^7.5.8",
+        "@types/shell-quote": "^1.7.5",
         "@vercel/ncc": "^0.38.3",
         "eslint": "^9.20.0",
         "ncc": "^0.3.6",

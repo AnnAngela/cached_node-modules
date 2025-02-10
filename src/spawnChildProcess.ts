@@ -1,4 +1,5 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
+import shellQuote from "shell-quote";
 // import { randomUUID } from "node:crypto";
 import { debug } from "@actions/core";
 import networkError from "./networkError.js";
@@ -26,8 +27,11 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
         uuid = randomUUID();
         console.info(`::stop-commands::${uuid}`);
     } */
+    const parsedCommand = shellQuote.parse(command).filter((entry) => typeof entry === "string");
+    const cmd = parsedCommand[0];
+    const args = parsedCommand.slice(1);
     // eslint-disable-next-line promise/prefer-await-to-callbacks
-    const childProcess = exec(command, { cwd: options.cwd }, (error, stdout, stderr) => {
+    const childProcess = execFile(cmd, args, { cwd: options.cwd }, (error, stdout, stderr) => {
         /* if (uuid) {
             console.info(`::${uuid}::`);
         } */
@@ -45,7 +49,7 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
                     return;
                 }
             }
-            rej(error);
+            rej(error as Error);
         } else {
             const result = stdout.trim();
             debug(`[spawnChildProcess] Command "${command}" succeeded, result: ${result}`);
