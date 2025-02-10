@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline";
-import { valid, gt } from "semver";
+import { gt, valid } from "semver";
 import execCommand from "./modules/spawnChildProcess.js";
 
 console.info("Current package:", process.env.npm_package_name);

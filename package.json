@@ -17,7 +17,7 @@
         "lint:write": "eslint --fix .",
         "package": "ncc build src/index.ts --out dist --minify",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "ci": "rm -rf node_modules && npm ci",
+        "ci": "export RANDOM_UUID=$(uuidgen) && rm -rdf node_modules && node scripts/ci/before.js && npm ci && node scripts/ci/after.js",
         "tag": "node scripts/newTag.js"
     },
     "engines": {
@@ -46,6 +46,7 @@
         "@vercel/ncc": "^0.38.3",
         "eslint": "^9.20.0",
         "ncc": "^0.3.6",
+        "simple-git": "^3.27.0",
         "typescript": "^5.7.3"
     },
     "dependencies": {
@@ -55,6 +56,7 @@
         "@octokit/auth-action": "^5.1.1",
         "@octokit/plugin-retry": "^7.1.3",
         "@octokit/rest": "^21.1.0",
-        "semver": "^7.7.1"
+        "semver": "^7.7.1",
+        "shell-quote": "^1.8.2"
     }
 }

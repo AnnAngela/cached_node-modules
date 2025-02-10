@@ -9,7 +9,7 @@ const ignores = [
 ];
 const nodeConfig = configs.node;
 nodeConfig.rules["n/no-unsupported-features/node-builtins"] = ["error", {
-    version: "^20.11 || ^22.11",
+    version: "^22.11",
     ignores: [
         "fs.promises.cp",
     ],
