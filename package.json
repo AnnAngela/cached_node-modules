@@ -41,7 +41,7 @@
     "devDependencies": {
         "@annangela/eslint-config": "^7.0.0",
         "@annangela/eslint-formatter-gha": "^3.0.0",
-        "@types/node": "^22.13.11",
+        "@types/node": "^22.13.13",
         "@types/semver": "^7.5.8",
         "@types/shell-quote": "^1.7.5",
         "@vercel/ncc": "^0.38.3",
