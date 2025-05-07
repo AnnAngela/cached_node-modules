@@ -41,11 +41,11 @@
     "devDependencies": {
         "@annangela/eslint-config": "^7.0.0",
         "@annangela/eslint-formatter-gha": "^3.0.0",
-        "@types/node": "^22.14.1",
+        "@types/node": "^22.15.3",
         "@types/semver": "^7.7.0",
         "@types/shell-quote": "^1.7.5",
         "@vercel/ncc": "^0.38.3",
-        "eslint": "^9.25.1",
+        "eslint": "^9.26.0",
         "ncc": "^0.3.6",
         "simple-git": "^3.27.0",
         "typescript": "^5.8.3"
