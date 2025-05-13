@@ -41,7 +41,7 @@
     "devDependencies": {
         "@annangela/eslint-config": "^7.0.0",
         "@annangela/eslint-formatter-gha": "^3.0.0",
-        "@types/node": "^22.15.3",
+        "@types/node": "^22.15.17",
         "@types/semver": "^7.7.0",
         "@types/shell-quote": "^1.7.5",
         "@vercel/ncc": "^0.38.3",
@@ -53,11 +53,11 @@
     "dependencies": {
         "@actions/cache": "^4.0.3",
         "@actions/core": "^1.11.1",
-        "@actions/github": "^6.0.0",
+        "@actions/github": "^6.0.1",
         "@octokit/auth-action": "^5.1.2",
         "@octokit/plugin-retry": "^7.2.1",
         "@octokit/rest": "^21.1.1",
-        "semver": "^7.7.1",
+        "semver": "^7.7.2",
         "shell-quote": "^1.8.2"
     }
 }
