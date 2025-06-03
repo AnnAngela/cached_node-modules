@@ -58,6 +58,6 @@
         "@octokit/plugin-retry": "^8.0.1",
         "@octokit/rest": "^22.0.0",
         "semver": "^7.7.2",
-        "shell-quote": "^1.8.2"
+        "shell-quote": "^1.8.3"
     }
 }
