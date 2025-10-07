@@ -41,11 +41,11 @@
     "devDependencies": {
         "@annangela/eslint-config": "^7.0.0",
         "@annangela/eslint-formatter-gha": "^3.0.0",
-        "@types/node": "^24.6.2",
+        "@types/node": "^24.7.0",
         "@types/semver": "^7.7.1",
         "@types/shell-quote": "^1.7.5",
         "@vercel/ncc": "^0.38.4",
-        "eslint": "^9.36.0",
+        "eslint": "^9.37.0",
         "ncc": "^0.3.6",
         "simple-git": "^3.28.0",
         "typescript": "^5.9.3"
@@ -57,7 +57,7 @@
         "@octokit/auth-action": "^6.0.1",
         "@octokit/plugin-retry": "^8.0.2",
         "@octokit/rest": "^22.0.0",
-        "semver": "^7.7.2",
+        "semver": "^7.7.3",
         "shell-quote": "^1.8.3"
     }
 }
