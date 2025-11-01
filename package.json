@@ -47,7 +47,7 @@
         "@vercel/ncc": "^0.38.4",
         "eslint": "^9.38.0",
         "ncc": "^0.3.6",
-        "simple-git": "^3.28.0",
+        "simple-git": "^3.29.0",
         "typescript": "^5.9.3"
     },
     "dependencies": {
