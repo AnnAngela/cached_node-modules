@@ -66,6 +66,8 @@ You can get these outputs from the action (The GitHub Actions output is always s
 
   Example: `"true"` or `"false"`
 
+When this action creates a new cache entry and the workflow later fails, the action will delete that cache in its `post` step to avoid keeping a broken cache for subsequent runs.
+
 ## Magic Variables
 
 You can use these magic variables in the `cacheKey` to generate different cache keys for different OS, Node.js and NPM versions.

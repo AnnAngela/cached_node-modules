@@ -1,5 +1,5 @@
 import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
-import { getInput, setOutput, debug, startGroup, endGroup } from "@actions/core";
+import { getInput, setOutput, debug, startGroup, endGroup, saveState } from "@actions/core";
 import path from "node:path";
 import fs from "node:fs";
 import timersPromises from "node:timers/promises";
@@ -73,6 +73,7 @@ for (const variableName of variableNames) {
 }
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
 console.info("Variables replaced, cacheKey:", cacheKey);
+saveState("cacheKey", cacheKey);
 
 startGroup("Try to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
@@ -100,6 +101,7 @@ if (restoreCacheResult) {
         uploadConcurrency: 8,
     }, false);
     debug(`saveCacheResult: ${saveCacheResult}`);
+    saveState("cacheSaved", "true");
     endGroup();
     console.info("Cache saved.");
 }
