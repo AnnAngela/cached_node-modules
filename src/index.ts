@@ -74,7 +74,6 @@ for (const variableName of variableNames) {
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
 console.info("Variables replaced, cacheKey:", cacheKey);
 saveState("cacheKey", cacheKey);
-saveState("cacheSaved", false);
 
 startGroup("Try to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
@@ -102,7 +101,7 @@ if (restoreCacheResult) {
         uploadConcurrency: 8,
     }, false);
     debug(`saveCacheResult: ${saveCacheResult}`);
-    saveState("cacheSaved", true);
+    saveState("cacheSaved", "true");
     endGroup();
     console.info("Cache saved.");
 }
