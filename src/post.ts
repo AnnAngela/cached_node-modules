@@ -1,7 +1,7 @@
 import { getState, warning } from "@actions/core";
 import octokit from "./Octokit.js";
 
-const cacheKey = getState("cacheKey").trim();
+const cacheKey = getState("cacheKey");
 const cacheSaved = getState("cacheSaved") === "true";
 
 if (!cacheSaved || !cacheKey) {

@@ -66,8 +66,11 @@ You can get these outputs from the action (The GitHub Actions output is always s
 
   Example: `"true"` or `"false"`
 
-When this action creates a new cache entry and the workflow later fails, the action will delete that cache in its `post` step to avoid keeping a broken cache for subsequent runs.
+When this action creates a new cache entry and the workflow later fails, the action will attempt to delete that cache in its `post` step to avoid keeping a broken cache for subsequent runs.
 
+> Note: Deleting caches via the GitHub Actions API requires a token with `actions: write` permission. If your workflow does not grant this (for example, on pull requests from forks where `${{ secrets.GITHUB_TOKEN }}` is more restricted), the post step will log a warning and the cache may not be deleted. To enable cleanup for workflows where you control permissions, configure your workflow like:
+>
+> 
 ## Magic Variables
 
 You can use these magic variables in the `cacheKey` to generate different cache keys for different OS, Node.js and NPM versions.
