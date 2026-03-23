@@ -41,11 +41,14 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
 **Basic:**
 
 ```yaml
+permissions:
+  contents: read
+  actions: write # Required to delete cache when workflow fails after creating new cache
 steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: 20
+    node-version: 24
 - uses: AnnAngela/cached_node-modules@v2
 - run: npm test
 ```
@@ -65,6 +68,10 @@ You can get these outputs from the action (The GitHub Actions output is always s
 * `cache-hit`: Whether the cache is hit
 
   Example: `"true"` or `"false"`
+
+When this action creates a new cache entry and the workflow later fails, the action will attempt to delete that cache in its `post` step to avoid keeping a broken cache for subsequent runs.
+
+> ***Note: Deleting caches via the GitHub Actions API requires a token with `actions: write` permission. If your workflow does not grant this (for example, on pull requests from forks where `${{ secrets.GITHUB_TOKEN }}` is more restricted), the post step will log a warning and the cache may not be deleted.***
 
 ## Magic Variables
 

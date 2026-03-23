@@ -1,7 +1,7 @@
-import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
-import { getInput, setOutput, debug, startGroup, endGroup } from "@actions/core";
-import path from "node:path";
+import { isFeatureAvailable, restoreCache, saveCache } from "@actions/cache";
+import { debug, endGroup, getInput, saveState, setOutput, startGroup } from "@actions/core";
 import fs from "node:fs";
+import path from "node:path";
 import timersPromises from "node:timers/promises";
 import Variable from "./Variable.js";
 import spawnChildProcess from "./spawnChildProcess.js";
@@ -71,8 +71,10 @@ for (const variableName of variableNames) {
         debug(`[replacingVariables] \t\tnew cacheKey: ${cacheKey}`);
     }
 }
+cacheKey = cacheKey.trim();
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
 console.info("Variables replaced, cacheKey:", cacheKey);
+saveState("cacheKey", cacheKey);
 
 startGroup("Try to restore cache...");
 const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undefined, {
@@ -84,7 +86,7 @@ await timersPromises.setTimeout(100);
 debug(`restoreCacheResult: ${restoreCacheResult}`);
 endGroup();
 
-if (restoreCacheResult) {
+if (restoreCacheResult === cacheKey) {
     console.info("Cache exists and restored.");
 } else {
     startGroup("Cache does not exist, start to run command...");
@@ -100,6 +102,7 @@ if (restoreCacheResult) {
         uploadConcurrency: 8,
     }, false);
     debug(`saveCacheResult: ${saveCacheResult}`);
+    saveState("cacheSaved", "true");
     endGroup();
     console.info("Cache saved.");
 }
@@ -110,7 +113,7 @@ setOutput("cacheKey", cacheKey);
 const variables = JSON.stringify(variable.getCache());
 console.info("\tvariables:", variables);
 setOutput("variables", variables);
-const cacheHit = !!restoreCacheResult;
+const cacheHit = restoreCacheResult === cacheKey;
 console.info("\tcache-hit:", cacheHit);
 setOutput("cache-hit", cacheHit);
 console.info("Outputs set, exit.");

@@ -1,14 +1,14 @@
 {
     "extends": [
-        "@annangela/eslint-config/tsconfig.node20.json",
-        // "./node_modules/@annangela/eslint-config/dist/tsconfigs/tsconfig.node20.json",
+        // "@annangela/eslint-config/tsconfig.node24.json",
+        "./node_modules/@annangela/eslint-config/dist/tsconfigs/tsconfig.node24.json",
     ],
     "compilerOptions": {
         "outDir": "./dist",
         "rootDir": "./src",
         "baseUrl": "./",
-        "module": "Node16", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
-        "moduleResolution": "Node16", // Node 20 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
+        "module": "nodenext", // Node 24 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
+        "moduleResolution": "node16", // Node 24 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
         "declaration": false,
         "declarationMap": false,
     },
