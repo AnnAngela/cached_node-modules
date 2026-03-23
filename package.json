@@ -15,7 +15,7 @@
         "lint:check": "eslint .",
         "lint:check-ci": "eslint --exit-on-fatal-error -f ./node_modules/@annangela/eslint-formatter-gha/dist/index.js --max-warnings 0 .",
         "lint:write": "eslint --fix .",
-        "package": "ncc build src/index.ts --out dist/ --minify && ncc build src/post.ts --out dist/ --minify",
+        "package": "bash scripts/package.sh",
         "test": "echo \"Error: no test specified\" && exit 1",
         "ci": "export RANDOM_UUID=$(uuidgen) && rm -rdf node_modules && node scripts/ci/before.js && npm ci && node scripts/ci/after.js",
         "tag": "node scripts/newTag.js"
@@ -44,9 +44,8 @@
         "@types/node": "^25.5.0",
         "@types/semver": "^7.7.1",
         "@types/shell-quote": "^1.7.5",
-        "@vercel/ncc": "^0.38.4",
+        "esbuild": "^0.25.0",
         "eslint": "^10.0.3",
-        "ncc": "^0.3.6",
         "simple-git": "^3.33.0",
         "typescript": "^5.9.3"
     },
