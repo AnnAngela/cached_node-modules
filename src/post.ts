@@ -1,5 +1,4 @@
 import { getState, warning } from "@actions/core";
-import { context } from "@actions/github";
 import octokit from "./Octokit.js";
 
 const cacheKey = getState("cacheKey").trim();
@@ -9,14 +8,10 @@ if (!cacheSaved || !cacheKey) {
     console.info("No cache created by this action run, skip cache deletion.");
 } else {
     try {
-        const {
-            repo: { owner, repo },
-        } = context;
         await octokit.actions.deleteActionsCacheByKey({
-            owner,
-            repo,
+            ...octokit.context.repo,
             key: cacheKey,
-            ref: context.ref,
+            ref: octokit.context.ref,
         });
         console.info(`Deleted cache for key "${cacheKey}".`);
     } catch (error) {
