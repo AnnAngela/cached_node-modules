@@ -22,7 +22,7 @@ for target in "${SRC_TARGETS[@]}"; do
     "$ESBUILD_BIN" "$ROOT_DIR/src/${target}.ts" \
         --bundle \
         --format=esm \
-        --legal-comments=none \
+        --legal-comments=inline \
         --log-level=info \
         --minify \
         --outfile="$DIST_DIR/${target}.js" \
