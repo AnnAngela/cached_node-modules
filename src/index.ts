@@ -1,7 +1,7 @@
-import { restoreCache, saveCache, isFeatureAvailable } from "@actions/cache";
-import { getInput, setOutput, debug, startGroup, endGroup, saveState } from "@actions/core";
-import path from "node:path";
+import { isFeatureAvailable, restoreCache, saveCache } from "@actions/cache";
+import { debug, endGroup, getInput, saveState, setOutput, startGroup } from "@actions/core";
 import fs from "node:fs";
+import path from "node:path";
 import timersPromises from "node:timers/promises";
 import Variable from "./Variable.js";
 import spawnChildProcess from "./spawnChildProcess.js";
@@ -85,7 +85,7 @@ await timersPromises.setTimeout(100);
 debug(`restoreCacheResult: ${restoreCacheResult}`);
 endGroup();
 
-if (restoreCacheResult) {
+if (restoreCacheResult === cacheKey) {
     console.info("Cache exists and restored.");
 } else {
     startGroup("Cache does not exist, start to run command...");
@@ -112,7 +112,7 @@ setOutput("cacheKey", cacheKey);
 const variables = JSON.stringify(variable.getCache());
 console.info("\tvariables:", variables);
 setOutput("variables", variables);
-const cacheHit = !!restoreCacheResult;
+const cacheHit = restoreCacheResult === cacheKey;
 console.info("\tcache-hit:", cacheHit);
 setOutput("cache-hit", cacheHit);
 console.info("Outputs set, exit.");
