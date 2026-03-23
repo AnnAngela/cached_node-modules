@@ -71,6 +71,7 @@ for (const variableName of variableNames) {
         debug(`[replacingVariables] \t\tnew cacheKey: ${cacheKey}`);
     }
 }
+cacheKey = cacheKey.trim();
 debug(`[replacingVariables] [after] cacheKey: ${cacheKey}`);
 console.info("Variables replaced, cacheKey:", cacheKey);
 saveState("cacheKey", cacheKey);
