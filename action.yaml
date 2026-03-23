@@ -51,5 +51,5 @@ outputs:
 runs:
   using: node24
   main: dist/index.js
-  post: dist/post/index.js
+  post: dist/post.js
   post-if: failure()
