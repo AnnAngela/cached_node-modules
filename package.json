@@ -15,7 +15,7 @@
         "lint:check": "eslint .",
         "lint:check-ci": "eslint --exit-on-fatal-error -f ./node_modules/@annangela/eslint-formatter-gha/dist/index.js --max-warnings 0 .",
         "lint:write": "eslint --fix .",
-        "package": "node -e \"const fs = require('node:fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('.tmp/post-dist', { recursive: true, force: true });\" && ncc build src/index.ts --out dist --minify && ncc build src/post.ts --out .tmp/post-dist --minify && node -e \"const fs = require('node:fs'); fs.renameSync('.tmp/post-dist/index.js', 'dist/post.js'); fs.rmSync('.tmp/post-dist', { recursive: true, force: true });\"",
+        "package": "ncc build src/index.ts --out dist --minify",
         "test": "echo \"Error: no test specified\" && exit 1",
         "ci": "export RANDOM_UUID=$(uuidgen) && rm -rdf node_modules && node scripts/ci/before.js && npm ci && node scripts/ci/after.js",
         "tag": "node scripts/newTag.js"
