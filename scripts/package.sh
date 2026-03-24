@@ -21,6 +21,7 @@ for target in "${SRC_TARGETS[@]}"; do
     echo "Packaging ${target}.ts..."
     "$ESBUILD_BIN" "$ROOT_DIR/src/${target}.ts" \
         --bundle \
+        --banner:js='import{createRequire as __createRequire}from"node:module";const require=__createRequire(import.meta.url);' \
         --format=esm \
         --legal-comments=inline \
         --log-level=info \
