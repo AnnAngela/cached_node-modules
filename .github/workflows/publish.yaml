@@ -3,12 +3,11 @@ name: publish
 on:
   workflow_dispatch:
   push:
-    branches:    
+    branches:
       - master
     paths:
       - package.json
       - .github/workflows/publish.yaml
-
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -16,7 +15,7 @@ env:
   GHA_BOT_GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
 
 permissions:
-  actions: read
+  actions: write
   checks: read
   contents: write
   deployments: read

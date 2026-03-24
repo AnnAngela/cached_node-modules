@@ -12,12 +12,12 @@ on:
   merge_group:
   pull_request:
     paths:
-        - src/**/*
-        - .*.yaml
-        - eslint.config.js
-        - .github/workflows/linter.yaml
-        - package.json
-        - package-lock.json
+      - src/**/*
+      - .*.yaml
+      - eslint.config.js
+      - .github/workflows/linter.yaml
+      - package.json
+      - package-lock.json
   workflow_dispatch:
   schedule:
     - cron: 0 23 * * * # Every 07:00 CST
@@ -29,7 +29,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 permissions:
-  actions: read
+  actions: write
   checks: read
   contents: write
   deployments: read
