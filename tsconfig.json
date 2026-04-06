@@ -6,9 +6,6 @@
     "compilerOptions": {
         "outDir": "./dist",
         "rootDir": "./src",
-        "baseUrl": "./",
-        "module": "nodenext", // Node 24 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
-        "moduleResolution": "node16", // Node 24 - https://github.com/tsconfig/bases#centralized-recommendations-for-tsconfig-bases
         "declaration": false,
         "declarationMap": false,
     },
