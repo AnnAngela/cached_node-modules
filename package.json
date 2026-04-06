@@ -46,7 +46,7 @@
         "@types/shell-quote": "^1.7.5",
         "esbuild": "^0.28.0",
         "eslint": "^10.2.0",
-        "simple-git": "^3.33.0",
+        "simple-git": "^3.35.2",
         "typescript": "^6.0.2"
     },
     "dependencies": {
