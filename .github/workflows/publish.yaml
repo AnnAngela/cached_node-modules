@@ -62,6 +62,8 @@ jobs:
       - name: Installing the dependencies
         if: steps.testIfExist.outputs.EXIST == 'false'
         uses: AnnAngela/cached_node-modules@v5
+        with:
+          command: npm run ci
 
       - name: Get major tag
         if: steps.testIfExist.outputs.EXIST == 'false'
