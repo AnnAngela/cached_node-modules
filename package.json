@@ -45,14 +45,14 @@
         "@types/semver": "^7.7.1",
         "@types/shell-quote": "^1.7.5",
         "esbuild": "^0.28.0",
-        "eslint": "^10.2.0",
+        "eslint": "^10.2.1",
         "simple-git": "^3.36.0",
-        "typescript": "^6.0.2"
+        "typescript": "^6.0.3"
     },
     "dependencies": {
         "@actions/cache": "^6.0.0",
-        "@actions/core": "^3.0.0",
-        "@actions/github": "^9.1.0",
+        "@actions/core": "^3.0.1",
+        "@actions/github": "^9.1.1",
         "@octokit/auth-action": "^6.0.2",
         "@octokit/plugin-retry": "^8.1.0",
         "@octokit/rest": "^22.0.1",
