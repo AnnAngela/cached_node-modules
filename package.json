@@ -45,7 +45,7 @@
         "@types/semver": "^7.7.1",
         "@types/shell-quote": "^1.7.5",
         "esbuild": "^0.28.0",
-        "eslint": "^10.2.1",
+        "eslint": "^10.3.0",
         "simple-git": "^3.36.0",
         "typescript": "^6.0.3"
     },
