@@ -82,8 +82,7 @@ const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undef
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
 await timersPromises.setTimeout(100);
-// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-debug(`restoreCacheResult: ${restoreCacheResult}`);
+debug(`restoreCacheResult: ${restoreCacheResult ?? "(undefined)"}`);
 endGroup();
 
 if (restoreCacheResult === cacheKey) {
@@ -118,5 +117,3 @@ console.info("\tcache-hit:", cacheHit);
 setOutput("cache-hit", cacheHit);
 console.info("Outputs set, exit.");
 await timersPromises.setTimeout(3000);
-// eslint-disable-next-line n/no-process-exit
-process.exit(0);

@@ -42,14 +42,14 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
                 debug(`[spawnChildProcess] retryTime: ${retryTime}.`);
                 if (retryTime > 0) {
                     console.info("[spawnChildProcess] Network error detected, retrying...");
-                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                    setTimeout(async () => {
-                        res(await execCommand(command, { ...options, retryTime: retryTime - 1 }));
+                    setTimeout(() => {
+                        res(execCommand(command, { ...options, retryTime: retryTime - 1 }));
                     }, 5000);
                     return;
                 }
             }
-            rej(error as Error);
+            const execError: Error = error;
+            rej(execError);
         } else {
             const result = stdout.trim();
             debug(`[spawnChildProcess] Command "${command}" succeeded, result: ${result}`);
