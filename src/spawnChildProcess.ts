@@ -49,7 +49,7 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
                     return;
                 }
             }
-            rej(error as Error);
+            rej(error);
         } else {
             const result = stdout.trim();
             debug(`[spawnChildProcess] Command "${command}" succeeded, result: ${result}`);
