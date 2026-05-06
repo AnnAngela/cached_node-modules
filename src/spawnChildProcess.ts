@@ -49,7 +49,8 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
                     return;
                 }
             }
-            rej(error);
+            const execError: Error = error;
+            rej(execError);
         } else {
             const result = stdout.trim();
             debug(`[spawnChildProcess] Command "${command}" succeeded, result: ${result}`);
