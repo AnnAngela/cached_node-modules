@@ -1,18 +1,20 @@
 {
     "version": 1,
     "hooks": {
-        "sessionStart": [
+        "SessionStart": [
             {
                 "type": "command",
-                "bash": "sudo n lts && hash -r",
-                "timeoutSec": 137
+                "linux": "bash .github/hooks/prepare-nodejs-session-start.sh",
+                "osx": "bash .github/hooks/prepare-nodejs-session-start.sh",
+                "timeout": 137
             }
         ],
-        "preToolUse": [
+        "PreToolUse": [
             {
                 "type": "command",
-                "bash": "node --version",
-                "timeoutSec": 137
+                "linux": "bash .github/hooks/prepare-nodejs-pre-tool-use.sh",
+                "osx": "bash .github/hooks/prepare-nodejs-pre-tool-use.sh",
+                "timeout": 137
             }
         ]
     }
