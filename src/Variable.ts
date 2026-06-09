@@ -46,21 +46,22 @@ type variableFunction = (_input: string) => Promise<string>;
 /**
  * Known variable names accepted by {@link Variable.get}.
  * CUSTOM_VARIABLE, PM, LOCKFILE, and PM_VERSION_* are handled directly;
- * all other names must be keys of {@link Variable.VARIABLE_MAP}.
+ * all other names must be keys of {@link Variable.VARIABLE_MAP_BASE}.
  */
 export type VariableName = keyof variableMap | "CUSTOM_VARIABLE" | "PM" | "LOCKFILE" | "PM_VERSION_MAJOR" | "PM_VERSION_MINOR" | "PM_VERSION_PATCH";
 
 export default class Variable {
-    static readonly VARIABLE_MAP: Readonly<Record<keyof variableMap, variableFunction>> = {
+    // VARIABLE_MAP_BASE holds all variable resolvers that do NOT depend on
+    // the instance's packageManager. PM_VERSION is resolved per-instance
+    // in get() so that each Variable instance can target a different package
+    // manager without static-state races.
+    private static readonly VARIABLE_MAP_BASE: Readonly<Omit<Record<keyof variableMap, variableFunction>, "PM_VERSION">> = {
         OS_NAME: (cwd) => spawnChildProcess("node --eval=\"console.info(process.platform)\"", { cwd }),
         NODE_ARCH: (cwd) => spawnChildProcess("node --eval=\"console.info(process.arch)\"", { cwd }),
         NODE_VERSION: (cwd) => spawnChildProcess("node --version", { cwd }),
-        NODE_VERSION_MAJOR: async (cwd) => `${semver.major(await Variable.VARIABLE_MAP.NODE_VERSION(cwd))}`,
-        NODE_VERSION_MINOR: async (cwd) => `${semver.minor(await Variable.VARIABLE_MAP.NODE_VERSION(cwd))}`,
-        NODE_VERSION_PATCH: async (cwd) => `${semver.patch(await Variable.VARIABLE_MAP.NODE_VERSION(cwd))}`,
-        // PM_VERSION: the raw version string of the package manager.
-        // The packageManager to use is read from the static property set by the constructor.
-        PM_VERSION: function (cwd) { return spawnChildProcess(`${Variable.packageManager} --version`, { cwd }) },
+        NODE_VERSION_MAJOR: async (cwd) => `${semver.major(await Variable.VARIABLE_MAP_BASE.NODE_VERSION(cwd))}`,
+        NODE_VERSION_MINOR: async (cwd) => `${semver.minor(await Variable.VARIABLE_MAP_BASE.NODE_VERSION(cwd))}`,
+        NODE_VERSION_PATCH: async (cwd) => `${semver.patch(await Variable.VARIABLE_MAP_BASE.NODE_VERSION(cwd))}`,
         LOCKFILE_GIT_COMMIT_LONG: fetchFileGitCommitLong,
         LOCKFILE_GIT_COMMIT_SHORT: async (filePath) => (await fetchFileGitCommitLong(filePath)).slice(0, 7),
         PACKAGEJSON_GIT_COMMIT_LONG: fetchFileGitCommitLong,
@@ -75,7 +76,7 @@ export default class Variable {
         PACKAGEJSON_HASH_SHA3_512: (filePath) => hashCalc(filePath, "SHA3_512"),
     };
     private readonly cache: Partial<variableMap> = {};
-    private static packageManager: string = "npm";
+    private readonly packageManager: string;
     constructor(
         private readonly cwd: string,
         private readonly lockfilePath: string,
@@ -83,7 +84,7 @@ export default class Variable {
         private readonly customVariable: string,
         packageManager: string,
     ) {
-        Variable.packageManager = packageManager;
+        this.packageManager = packageManager;
     }
     getCache() {
         return Object.freeze(this.cache);
@@ -109,13 +110,11 @@ export default class Variable {
      * Type guard: checks whether `name` is a recognised variable name
      * that can be passed to {@link Variable.get}.
      */
-    static isVariableName(name: string): name is VariableName {
-        return name === "CUSTOM_VARIABLE"
-            || name === "PM"
-            || name === "LOCKFILE"
-            || name.startsWith("PM_VERSION_")
-            || Reflect.has(Variable.VARIABLE_MAP, name);
-    }
+    static isVariableName = (name: string): name is VariableName => name === "CUSTOM_VARIABLE"
+        || name === "PM"
+        || name === "LOCKFILE"
+        || name.startsWith("PM_VERSION_")
+        || Reflect.has(Variable.VARIABLE_MAP_BASE, name);
     async get(variableName: VariableName): Promise<string> {
         debug(`[Variable] variableName: ${variableName}`);
         if (variableName === "CUSTOM_VARIABLE") {
@@ -123,13 +122,27 @@ export default class Variable {
             return this.customVariable;
         }
         if (variableName === "PM") {
-            debug(`[Variable] variableName is "PM", returning packageManager: ${Variable.packageManager}`);
-            return Variable.packageManager;
+            debug(`[Variable] variableName is "PM", returning packageManager: ${this.packageManager}`);
+            return this.packageManager;
         }
         if (variableName === "LOCKFILE") {
-            const lockfileName = Variable.PM_LOCKFILE_MAP[Variable.packageManager] ?? "package-lock";
+            const lockfileName = Variable.PM_LOCKFILE_MAP[this.packageManager] ?? "package-lock";
             debug(`[Variable] variableName is "LOCKFILE", returning lockfileName: ${lockfileName}`);
             return lockfileName;
+        }
+        // PM_VERSION: the raw version string of the package manager.
+        // Resolved per-instance using the instance's packageManager, so
+        // each Variable can target a different package manager.
+        if (variableName === "PM_VERSION") {
+            const cached = this.cache[variableName];
+            if (typeof cached === "string") {
+                debug(`[Variable] variableName: ${variableName} is in cache, returning cached value: ${cached}`);
+                return cached;
+            }
+            const result = await spawnChildProcess(`${this.packageManager} --version`, { cwd: this.cwd });
+            this.cache[variableName] = result;
+            debug(`[Variable] variableName ${variableName} caches result: ${result}`);
+            return result;
         }
         // PM_VERSION_MAJOR/MINOR/PATCH are derived from PM_VERSION via semver.
         // They go through `get("PM_VERSION")` so that the cache on PM_VERSION
@@ -141,15 +154,16 @@ export default class Variable {
                 return cached;
             }
             const version = await this.get("PM_VERSION");
-            const suffix = (variableName as string).split("_").pop()!;
             const parsed = semver.parse(version);
             if (!parsed) {
-                throw new Error(`Failed to parse "${Variable.packageManager}" version "${version}" as semver.`);
+                throw new Error(`Failed to parse "${this.packageManager}" version "${version}" as semver.`);
             }
+            // Direct comparison avoids redundant string parsing
+            // (variableName is already narrowed to one of 3 values by the if above).
             let value: string;
-            if (suffix === "MAJOR") {
+            if (variableName === "PM_VERSION_MAJOR") {
                 value = `${parsed.major}`;
-            } else if (suffix === "MINOR") {
+            } else if (variableName === "PM_VERSION_MINOR") {
                 value = `${parsed.minor}`;
             } else {
                 value = `${parsed.patch}`;
@@ -158,10 +172,10 @@ export default class Variable {
             debug(`[Variable] variableName ${variableName} derived from PM_VERSION: ${value}`);
             return value;
         }
-        if (!Reflect.has(Variable.VARIABLE_MAP, variableName)) {
+        if (!Reflect.has(Variable.VARIABLE_MAP_BASE, variableName)) {
             throw new Error(`Variable "${variableName}" is not defined.`);
         }
-        const fn = Variable.VARIABLE_MAP[variableName];
+        const fn = Variable.VARIABLE_MAP_BASE[variableName];
         const cachedValue = this.cache[variableName];
         if (typeof cachedValue === "string") {
             debug(`[Variable] variableName: ${variableName} is in cache, returning cached value: ${cachedValue}`);

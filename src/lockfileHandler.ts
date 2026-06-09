@@ -55,12 +55,16 @@ interface packageLockJSON {
     };
 }
 
-const prepare = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath) => {
+const prepare = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath, content?: string) => {
     console.info("Found package-lock.json as lockfile, copy to tmp dir and remove unnecessary fields...");
     const tmpdir = await mkdtmp();
     const newLockfilePath = path.join(tmpdir, lockfileParsedPath.base);
     console.info("New lockfilePath:", newLockfilePath);
-    await fs.promises.cp(lockfilePath, newLockfilePath, { force: true });
+    if (content !== undefined) {
+        await fs.promises.writeFile(newLockfilePath, content, "utf-8");
+    } else {
+        await fs.promises.cp(lockfilePath, newLockfilePath, { force: true });
+    }
     return { tmpdir, newLockfilePath };
 };
 
@@ -104,12 +108,14 @@ export const pnpmLockHandler = async (lockfilePath: string, lockfileParsedPath: 
     const content = await fs.promises.readFile(newLockfilePath, "utf-8");
     let parsed: Record<string, unknown>;
     try {
-        parsed = YAML.parse(content) as Record<string, unknown>;
-        if (typeof parsed !== "object" || parsed === null) {
-            throw new Error(`Failed to parse pnpm-lock.yaml: expected an object, got ${typeof parsed}`);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const raw = YAML.parse(content);
+        if (typeof raw !== "object" || raw === null) {
+            throw new Error(`Failed to parse pnpm-lock.yaml: expected an object, got ${typeof raw}`);
         }
+        parsed = raw as Record<string, unknown>;
     } catch (cause) {
-        // YAML.parse always throws Error instances, and line 109 throws a new Error as well.
+        // YAML.parse always throws Error instances, and line 113 throws a new Error as well.
         throw new Error(`Failed to parse pnpm-lock.yaml at "${lockfilePath}": ${(cause as Error).message}`, {
             cause,
         });
@@ -135,10 +141,10 @@ export const pnpmLockHandler = async (lockfilePath: string, lockfileParsedPath: 
  *
  * @see https://classic.yarnpkg.com/en/docs/yarn-lock
  */
-export const yarnClassicLockHandler = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath) => {
-    const { tmpdir, newLockfilePath } = await prepare(lockfilePath, lockfileParsedPath);
-    const content = await fs.promises.readFile(newLockfilePath, "utf-8");
-    const lines = content.split("\n");
+export const yarnClassicLockHandler = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath, content?: string) => {
+    const { tmpdir, newLockfilePath } = await prepare(lockfilePath, lockfileParsedPath, content);
+    const fileContent = content ?? await fs.promises.readFile(newLockfilePath, "utf-8");
+    const lines = fileContent.split("\n");
     // Strip the two header comment lines that Yarn Classic always generates.
     // These lines are deterministic for a given Yarn version but do not
     // reflect any change in the actual resolved dependency tree.
@@ -163,16 +169,18 @@ export const yarnClassicLockHandler = async (lockfilePath: string, lockfileParse
  * @see https://yarnpkg.com/advanced/error-codes (lockfile format)
  * @see https://github.com/yarnpkg/berry
  */
-export const yarnBerryLockHandler = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath) => {
-    const { tmpdir, newLockfilePath } = await prepare(lockfilePath, lockfileParsedPath);
+export const yarnBerryLockHandler = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath, content?: string) => {
+    const { tmpdir, newLockfilePath } = await prepare(lockfilePath, lockfileParsedPath, content);
     const YAML = (await import("yaml")).default;
-    const content = await fs.promises.readFile(newLockfilePath, "utf-8");
+    const fileContent = content ?? await fs.promises.readFile(newLockfilePath, "utf-8");
     let parsed: Record<string, unknown>;
     try {
-        parsed = YAML.parse(content) as Record<string, unknown>;
-        if (typeof parsed !== "object" || parsed === null) {
-            throw new Error(`Failed to parse yarn.lock (Berry): expected an object, got ${typeof parsed}`);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const raw = YAML.parse(fileContent);
+        if (typeof raw !== "object" || raw === null) {
+            throw new Error(`Failed to parse yarn.lock (Berry): expected an object, got ${typeof raw}`);
         }
+        parsed = raw as Record<string, unknown>;
     } catch (cause) {
         throw new Error(`Failed to parse yarn.lock at "${lockfilePath}": ${(cause as Error).message}`, {
             cause,

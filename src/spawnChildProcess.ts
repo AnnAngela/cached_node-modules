@@ -1,6 +1,5 @@
 import { execFile } from "node:child_process";
 import shellQuote from "shell-quote";
-// import { randomUUID } from "node:crypto";
 import { debug } from "@actions/core";
 import networkError from "./networkError.js";
 

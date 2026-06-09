@@ -13,16 +13,19 @@ if (!isFeatureAvailable()) {
 
 console.info("Parsing input...");
 
-const packageManager = getInput("packageManager") || "npm";
+const rawPackageManager = getInput("packageManager") || "npm";
 // Validate packageManager — must be one of the supported values.
 const VALID_PACKAGE_MANAGERS = ["npm", "pnpm", "yarn"] as const;
-if (!(VALID_PACKAGE_MANAGERS as readonly string[]).includes(packageManager)) {
-    throw new Error(`Invalid packageManager "${packageManager}". Must be one of: ${VALID_PACKAGE_MANAGERS.join(", ")}`);
+type SupportedPM = typeof VALID_PACKAGE_MANAGERS[number];
+if (!(VALID_PACKAGE_MANAGERS as readonly string[]).includes(rawPackageManager)) {
+    throw new Error(`Invalid packageManager "${rawPackageManager}". Must be one of: ${VALID_PACKAGE_MANAGERS.join(", ")}`);
 }
+// Narrow to the union type — the validation above guarantees this is safe.
+const packageManager: SupportedPM = rawPackageManager as SupportedPM;
 
 // Map package manager to default lockfile path and install command.
 // Users can override these via explicit lockfilePath / command inputs.
-const PM_DEFAULTS: Record<string, { lockfilePath: string; command: string }> = {
+const PM_DEFAULTS: Record<SupportedPM, { lockfilePath: string; command: string }> = {
     npm: { lockfilePath: "package-lock.json", command: "npm ci" },
     pnpm: { lockfilePath: "pnpm-lock.yaml", command: "pnpm install --frozen-lockfile" },
     yarn: { lockfilePath: "yarn.lock", command: "yarn install --frozen-lockfile" },

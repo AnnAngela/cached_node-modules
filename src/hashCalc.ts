@@ -24,18 +24,18 @@ export const algorithmMap = {
  * Returns the handler to use.
  */
 const detectYarnHandler = async (filePath: string, parsedPath: path.ParsedPath) => {
-    // Read the file once to avoid double I/O (fixes plan 7.8).
+    // Read the file once so the handler doesn't need to re-read it.
     const content = await fs.promises.readFile(filePath, "utf-8");
     if (content.includes("# yarn lockfile v1")) {
-        // Yarn Classic — use cached content, bypass re-read by writing to tmp
-        return yarnClassicLockHandler(filePath, parsedPath);
+        // Yarn Classic — pass pre-read content to avoid a second read inside prepare()
+        return yarnClassicLockHandler(filePath, parsedPath, content);
     }
     // Attempt YAML parse to check for __metadata (Yarn Berry indicator)
     try {
         const YAML = (await import("yaml")).default;
-        const parsed = YAML.parse(content);
-        if (parsed && typeof parsed === "object" && "__metadata" in parsed) {
-            return yarnBerryLockHandler(filePath, parsedPath);
+        const parsed = YAML.parse(content) as unknown;
+        if (parsed && typeof parsed === "object" && Reflect.has(parsed, "__metadata")) {
+            return await yarnBerryLockHandler(filePath, parsedPath, content);
         }
     } catch {
         // If YAML parse fails, fall through to raw hash
@@ -66,8 +66,12 @@ export const hashCalc = async (filePath: string, algorithm: keyof typeof algorit
             } else {
                 // Not a recognized yarn.lock format — fall through to stream hash
                 const fileStream = fs.createReadStream(filePath);
-                fileStream.on("data", (data) => { hash.update(data) });
-                fileStream.on("end", () => { res(hash.digest("hex")) });
+                fileStream.on("data", (data) => {
+                    hash.update(data);
+                });
+                fileStream.on("end", () => {
+                    res(hash.digest("hex"));
+                });
                 fileStream.on("error", rej);
             }
         }).catch(rej);
