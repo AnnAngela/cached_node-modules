@@ -53,18 +53,8 @@ vi.mock('shell-quote', () => ({
     },
 }))
 
-vi.mock('@actions/core', () => ({
-    getInput: vi.fn((name: string) => mockCoreInputs[name] ?? ''),
-    saveState: vi.fn((key: string, value: string) => { mockCoreStates[key] = value }),
-    setOutput: vi.fn((key: string, value: string) => { mockCoreOutputs[key] = value }),
-    debug: vi.fn(),
-    startGroup: vi.fn(),
-    endGroup: vi.fn(),
-    info: vi.fn(),
-}))
-
 // Mock Octokit (used by Variable internally)
-vi.mock('./Octokit.js', () => ({
+vi.mock('../Octokit.js', () => ({
     default: {
         context: {
             repo: { owner: 'test-owner', repo: 'test-repo' },
@@ -124,6 +114,12 @@ function setInput(name: string, value: string) {
 beforeEach(() => {
     resetState()
     vol.reset()
+    // Provide a default ChildProcess-like return value for execFile.
+    // Each test that triggers spawnChildProcess with synchronousStdout
+    // must return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } }
+    // from its mockImplementation. This default is overridden by any
+    // mockImplementation call, but serves as a safe fallback.
+    mockExecFile.mockReturnValue({ stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } })
 })
 
 afterEach(() => {
@@ -140,27 +136,27 @@ describe('index', () => {
             setInput('command', '') // empty → should derive "npm ci"
             setInput('lockfilePath', '') // empty → should derive "package-lock.json"
 
-            await expect(import('./index.js')).rejects.toThrow('Cache feature is not available.')
+            await expect(import('../index.js')).rejects.toThrow('Cache feature is not available.')
         })
 
         it('should default to pnpm-lock.yaml and pnpm install --frozen-lockfile for pnpm', async () => {
             mockIsFeatureAvailable.mockReturnValue(false)
             setInput('packageManager', 'pnpm')
 
-            await expect(import('./index.js')).rejects.toThrow('Cache feature is not available.')
+            await expect(import('../index.js')).rejects.toThrow('Cache feature is not available.')
         })
 
         it('should default to yarn.lock and yarn install --frozen-lockfile for yarn', async () => {
             mockIsFeatureAvailable.mockReturnValue(false)
             setInput('packageManager', 'yarn')
 
-            await expect(import('./index.js')).rejects.toThrow('Cache feature is not available.')
+            await expect(import('../index.js')).rejects.toThrow('Cache feature is not available.')
         })
 
         it('should throw for invalid packageManager', async () => {
             setInput('packageManager', 'foo')
 
-            await expect(import('./index.js')).rejects.toThrow('Invalid packageManager')
+            await expect(import('../index.js')).rejects.toThrow('Invalid packageManager')
         })
 
         it('should default to npm when packageManager is empty string or not set', async () => {
@@ -179,7 +175,7 @@ describe('index', () => {
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
             expect(mockSetOutput).toHaveBeenCalledWith('cache-hit', true)
         })
     })
@@ -195,7 +191,7 @@ describe('index', () => {
                 '/project/package.json': '{"name":"test"}',
             })
 
-            await expect(import('./index.js')).rejects.toThrow(/does not exist/)
+            await expect(import('../index.js')).rejects.toThrow(/does not exist/)
         })
     })
 
@@ -211,7 +207,7 @@ describe('index', () => {
                 // package.json NOT created — should cause the access check to throw
             })
 
-            await expect(import('./index.js')).rejects.toThrow(/does not exist/)
+            await expect(import('../index.js')).rejects.toThrow(/does not exist/)
         })
     })
 
@@ -232,7 +228,7 @@ describe('index', () => {
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             expect(mockRestoreCache).toHaveBeenCalled()
             expect(mockSaveCache).not.toHaveBeenCalled()
@@ -261,10 +257,11 @@ describe('index', () => {
             mockExecFile.mockImplementation(
                 (_cmd: string, _args: string[], _opts: unknown, cb: Function) => {
                     cb(null, 'ok\n', '')
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } }
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
             expect(mockSaveCache).toHaveBeenCalled()
         })
     })
@@ -290,10 +287,11 @@ describe('index', () => {
                     } else {
                         cb(null, 'success\n', '')
                     }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } }
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             // saveCache should have been called since restoreCache returned undefined
             expect(mockSaveCache).toHaveBeenCalled()
@@ -317,7 +315,7 @@ describe('index', () => {
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             expect(mockSetOutput).toHaveBeenCalledWith('cacheKey', 'plain-key')
             expect(mockSetOutput).toHaveBeenCalledWith('cache-hit', true)
@@ -343,10 +341,11 @@ describe('index', () => {
                     } else {
                         cb(null, 'ok\n', '')
                     }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } }
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             // UNKNOWN_VAR should be skipped, OS_NAME should be replaced
             expect(mockSetOutput).toHaveBeenCalledWith('cacheKey', '{UNKNOWN_VAR}-linux-rest')
@@ -376,10 +375,11 @@ describe('index', () => {
                     } else {
                         cb(null, 'ok\n', '')
                     }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } }
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             expect(mockSetOutput).toHaveBeenCalledWith('cacheKey', 'my-key-linux')
             expect(mockSetOutput).toHaveBeenCalledWith('variables', expect.any(String))
@@ -404,7 +404,7 @@ describe('index', () => {
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             expect(mockSetOutput).toHaveBeenCalledWith('cache-hit', true)
         })
@@ -425,7 +425,7 @@ describe('index', () => {
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             expect(mockSetOutput).toHaveBeenCalledWith('cache-hit', true)
         })
@@ -457,13 +457,48 @@ describe('index', () => {
                     } else {
                         cb(null, '', '')
                     }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } }
                 },
             )
 
-            await import('./index.js')
+            await import('../index.js')
 
             // If PM was replaced first, PM_VERSION_MAJOR would contain "npm" prefix
             expect(mockSetOutput).toHaveBeenCalledWith('cacheKey', 'npm@10:rest')
+        })
+
+        it('should replace {LOCKFILE} based on packageManager', async () => {
+            mockIsFeatureAvailable.mockReturnValue(true)
+            mockRestoreCache.mockResolvedValue(undefined)
+            mockSaveCache.mockResolvedValue(999)
+            setupFiles('npm', '/project/package-lock.json')
+            setInput('packageManager', 'npm')
+            setInput('cwd', '/project')
+            // Use {LOCKFILE} without git commit variables to avoid octokit mock issues
+            setInput('cacheKey', '{LOCKFILE}:rest')
+            setInput('command', 'npm ci')
+
+            const spawnResults: Record<string, string> = {
+                'npm ci': 'installed',
+            }
+
+            mockExecFile.mockImplementation(
+                (cmd: string, args: string[], _opts: unknown, cb: Function) => {
+                    const fullCmd = [cmd, ...args].join(' ')
+                    if (spawnResults[fullCmd] !== undefined) {
+                        cb(null, spawnResults[fullCmd] + '\n', '')
+                    } else {
+                        cb(null, '', '')
+                    }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } }
+                },
+            )
+
+            await import('../index.js')
+
+            // LOCKFILE should be "package-lock" for npm
+            expect(mockSetOutput).toHaveBeenCalledWith('cacheKey', 'package-lock:rest')
+            expect(mockSetOutput).toHaveBeenCalledWith('cache-hit', false)
         })
     })
 })

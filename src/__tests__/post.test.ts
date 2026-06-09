@@ -10,7 +10,7 @@ vi.mock('@actions/core', () => ({
     debug: vi.fn(),
 }))
 
-vi.mock('./Octokit.js', () => ({
+vi.mock('../Octokit.js', () => ({
     default: {
         context: {
             repo: { owner: 'test-owner', repo: 'test-repo' },
@@ -40,7 +40,7 @@ describe('post', () => {
         })
         mockDeleteActionsCacheByKey.mockResolvedValue(undefined)
 
-        await import('./post.js')
+        await import('../post.js')
 
         expect(mockDeleteActionsCacheByKey).not.toHaveBeenCalled()
         expect(mockWarning).not.toHaveBeenCalled()
@@ -54,7 +54,7 @@ describe('post', () => {
         })
         mockDeleteActionsCacheByKey.mockResolvedValue(undefined)
 
-        await import('./post.js')
+        await import('../post.js')
 
         expect(mockDeleteActionsCacheByKey).not.toHaveBeenCalled()
     })
@@ -67,7 +67,7 @@ describe('post', () => {
         })
         mockDeleteActionsCacheByKey.mockResolvedValue(undefined)
 
-        await import('./post.js')
+        await import('../post.js')
 
         expect(mockDeleteActionsCacheByKey).toHaveBeenCalledWith({
             owner: 'test-owner',
@@ -85,7 +85,7 @@ describe('post', () => {
         })
         mockDeleteActionsCacheByKey.mockRejectedValue(new Error('API rate limit exceeded'))
 
-        await import('./post.js')
+        await import('../post.js')
 
         await vi.waitFor(() => {
             expect(mockWarning).toHaveBeenCalled()
@@ -104,7 +104,7 @@ describe('post', () => {
         })
         mockDeleteActionsCacheByKey.mockRejectedValue('plain string error')
 
-        await import('./post.js')
+        await import('../post.js')
 
         await vi.waitFor(() => {
             expect(mockWarning).toHaveBeenCalled()

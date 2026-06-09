@@ -42,6 +42,14 @@ const fetchFileGitCommitLong = async (filePath: string) => {
 };
 
 type variableFunction = (_input: string) => Promise<string>;
+
+/**
+ * Known variable names accepted by {@link Variable.get}.
+ * CUSTOM_VARIABLE, PM, LOCKFILE, and PM_VERSION_* are handled directly;
+ * all other names must be keys of {@link Variable.VARIABLE_MAP}.
+ */
+export type VariableName = keyof variableMap | "CUSTOM_VARIABLE" | "PM" | "LOCKFILE" | "PM_VERSION_MAJOR" | "PM_VERSION_MINOR" | "PM_VERSION_PATCH";
+
 export default class Variable {
     static readonly VARIABLE_MAP: Readonly<Record<keyof variableMap, variableFunction>> = {
         OS_NAME: (cwd) => spawnChildProcess("node --eval=\"console.info(process.platform)\"", { cwd }),
@@ -90,7 +98,25 @@ export default class Variable {
         // PACKAGEJSON — covers PACKAGEJSON_HASH_* and PACKAGEJSON_GIT_COMMIT_*
         return await fn(this.packageJsonPath);
     }
-    async get(variableName: keyof variableMap | "CUSTOM_VARIABLE" | "PM" | "PM_VERSION_MAJOR" | "PM_VERSION_MINOR" | "PM_VERSION_PATCH"): Promise<string> {
+    // Mapping from package manager to lockfile base name (without extension).
+    // Used by the {LOCKFILE} magic variable.
+    private static readonly PM_LOCKFILE_MAP: Record<string, string> = {
+        npm: "package-lock",
+        pnpm: "pnpm-lock",
+        yarn: "yarn",
+    };
+    /**
+     * Type guard: checks whether `name` is a recognised variable name
+     * that can be passed to {@link Variable.get}.
+     */
+    static isVariableName(name: string): name is VariableName {
+        return name === "CUSTOM_VARIABLE"
+            || name === "PM"
+            || name === "LOCKFILE"
+            || name.startsWith("PM_VERSION_")
+            || Reflect.has(Variable.VARIABLE_MAP, name);
+    }
+    async get(variableName: VariableName): Promise<string> {
         debug(`[Variable] variableName: ${variableName}`);
         if (variableName === "CUSTOM_VARIABLE") {
             debug(`[Variable] variableName is "CUSTOM_VARIABLE", returning customVariable: ${this.customVariable}`);
@@ -99,6 +125,11 @@ export default class Variable {
         if (variableName === "PM") {
             debug(`[Variable] variableName is "PM", returning packageManager: ${Variable.packageManager}`);
             return Variable.packageManager;
+        }
+        if (variableName === "LOCKFILE") {
+            const lockfileName = Variable.PM_LOCKFILE_MAP[Variable.packageManager] ?? "package-lock";
+            debug(`[Variable] variableName is "LOCKFILE", returning lockfileName: ${lockfileName}`);
+            return lockfileName;
         }
         // PM_VERSION_MAJOR/MINOR/PATCH are derived from PM_VERSION via semver.
         // They go through `get("PM_VERSION")` so that the cache on PM_VERSION

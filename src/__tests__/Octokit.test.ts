@@ -54,7 +54,7 @@ describe('Octokit', () => {
     it('should fetch githubToken input, set env, plug retry, use auth strategy, and expose context', async () => {
         mockGetInput.mockReturnValue('gha-token-123')
 
-        const { default: client } = await import('./Octokit.js')
+        const { default: client } = await import('../Octokit.js')
 
         // Verify getInput was called
         expect(mockGetInput).toHaveBeenCalledWith('githubToken')

@@ -22,7 +22,7 @@ vi.mock('@actions/core', () => ({
 }))
 
 // Must be imported after mocks
-const execCommand = (await import('./spawnChildProcess.js')).default
+const execCommand = (await import('../spawnChildProcess.js')).default
 
 describe('spawnChildProcess', () => {
     afterEach(() => {

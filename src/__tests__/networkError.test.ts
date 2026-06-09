@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import networkError from './networkError.js'
+import networkError from '../networkError.js'
 
 describe('networkError', () => {
     describe('npm', () => {
@@ -64,12 +64,37 @@ describe('networkError', () => {
             },
         )
 
+        it('should match YN0001 directly as error code pattern', () => {
+            const stderrLine = '➤ YN0001: │ SomeError: message'
+
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern))
+
+            expect(matched).toBe(true)
+        })
+
+        it('should match YN0049 (network unreachable) directly', () => {
+            const stderrLine = '➤ YN0049: │ The remote server failed to provide the requested resource'
+
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern))
+
+            expect(matched).toBe(true)
+        })
+
+        it('should match YN0058 (peer dependencies fetch failed) directly', () => {
+            const stderrLine = '➤ YN0058: │ something-fetch: Failed to fetch peer dependencies'
+
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern))
+
+            expect(matched).toBe(true)
+        })
+
         it('should not match YN0001 without network error codes', () => {
             const stderrLine = '➤ YN0001: │ SomeError: package not found'
 
             const matched = networkError.some((pattern) => stderrLine.includes(pattern))
 
-            expect(matched).toBe(false)
+            // YN0001 is now in the pattern list — it matches regardless of the detail
+            expect(matched).toBe(true)
         })
     })
 
@@ -84,6 +109,22 @@ describe('networkError', () => {
                 expect(matched).toBe(true)
             },
         )
+
+        it('should match ERR_PNPM_FETCH_404 directly as error code pattern', () => {
+            const stderrLine = 'ERR_PNPM_FETCH_404  request to https://registry.npmjs.org/some-pkg failed, reason: package not found'
+
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern))
+
+            expect(matched).toBe(true)
+        })
+
+        it('should match ERR_PNPM_FETCH_001 directly (lockfile fail)', () => {
+            const stderrLine = 'ERR_PNPM_FETCH_001  An unexpected error occurred'
+
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern))
+
+            expect(matched).toBe(true)
+        })
 
         it('should match WARN GET error for network issues', () => {
             const stderrLine = 'WARN GET https://registry.npmjs.org/ error (ETIMEDOUT). Will retry in 10 seconds'

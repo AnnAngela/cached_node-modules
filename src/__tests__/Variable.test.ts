@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { vol, fs as memfs } from 'memfs'
 
 // Mock spawnChildProcess to control version outputs
-vi.mock('./spawnChildProcess.js', () => ({
+vi.mock('../spawnChildProcess.js', () => ({
     default: vi.fn(),
 }))
 // Mock hashCalc
-vi.mock('./hashCalc.js', () => ({
+vi.mock('../hashCalc.js', () => ({
     hashCalc: vi.fn(),
     algorithmMap: {
         SHA2_256: 'sha256',
@@ -16,7 +16,7 @@ vi.mock('./hashCalc.js', () => ({
     },
 }))
 // Mock Octokit for git commit variables
-vi.mock('./Octokit.js', () => {
+vi.mock('../Octokit.js', () => {
     const mockReposListCommits = vi.fn()
     return {
         default: {
@@ -36,21 +36,21 @@ vi.mock('@actions/core', () => ({
     debug: vi.fn(),
 }))
 
-import spawnChildProcess from './spawnChildProcess.js'
-import { hashCalc } from './hashCalc.js'
-import octokit from './Octokit.js'
+import spawnChildProcess from '../spawnChildProcess.js'
+import { hashCalc } from '../hashCalc.js'
+import octokit from '../Octokit.js'
 
 const mockSpawn = spawnChildProcess as ReturnType<typeof vi.fn>
 const mockHashCalc = hashCalc as ReturnType<typeof vi.fn>
 const mockListCommits = octokit.repos.listCommits as ReturnType<typeof vi.fn>
 
 // We'll import Variable after setting up mocks
-let Variable: typeof import('./Variable.js').default
+let Variable: typeof import('../Variable.js').default
 
 beforeEach(async () => {
     vi.clearAllMocks()
     // Import fresh after mock setup
-    const mod = await import('./Variable.js')
+    const mod = await import('../Variable.js')
     Variable = mod.default
 })
 
@@ -176,6 +176,34 @@ describe('Variable', () => {
             const v = new Variable('/cwd', '/cwd/lock', '/cwd/pkg.json', '', 'npm')
             await v.get('PM')
             expect(mockSpawn).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('LOCKFILE — lockfile base name variable', () => {
+        it('should return "package-lock" when packageManager is npm', async () => {
+            const v = new Variable('/cwd', '/cwd/lock', '/cwd/pkg.json', '', 'npm')
+            expect(await v.get('LOCKFILE')).toBe('package-lock')
+        })
+
+        it('should return "pnpm-lock" when packageManager is pnpm', async () => {
+            const v = new Variable('/cwd', '/cwd/lock', '/cwd/pkg.json', '', 'pnpm')
+            expect(await v.get('LOCKFILE')).toBe('pnpm-lock')
+        })
+
+        it('should return "yarn" when packageManager is yarn', async () => {
+            const v = new Variable('/cwd', '/cwd/lock', '/cwd/pkg.json', '', 'yarn')
+            expect(await v.get('LOCKFILE')).toBe('yarn')
+        })
+
+        it('should not call spawnChildProcess for LOCKFILE', async () => {
+            const v = new Variable('/cwd', '/cwd/lock', '/cwd/pkg.json', '', 'npm')
+            await v.get('LOCKFILE')
+            expect(mockSpawn).not.toHaveBeenCalled()
+        })
+
+        it('should fallback to "package-lock" for unknown packageManager', async () => {
+            const v = new Variable('/cwd', '/cwd/lock', '/cwd/pkg.json', '', 'unknown')
+            expect(await v.get('LOCKFILE')).toBe('package-lock')
         })
     })
 

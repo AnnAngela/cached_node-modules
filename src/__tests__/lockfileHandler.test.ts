@@ -22,7 +22,7 @@ import {
     pnpmLockHandler,
     yarnClassicLockHandler,
     yarnBerryLockHandler,
-} from './lockfileHandler.js'
+} from '../lockfileHandler.js'
 // Note: these exports may not exist yet — they will be added in the implementation phase
 
 beforeEach(() => {

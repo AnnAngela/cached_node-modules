@@ -7,7 +7,7 @@
  * - npm:  `npm ERR! code <code>`
  * - Yarn Classic v1: `error An unexpected error occurred: "...: <code>"`
  * - Yarn Berry v2+: `➤ YN0001: │ GotError: connect <code>`
- * - pnpm: `ERR_PNPM_FETCH_*  <code>: request to ... failed`
+ * - pnpm: `ERR_PNPM_FETCH_* <code>: request to ... failed`
  *
  * @see https://nodejs.org/api/errors.html#common-system-errors
  */
@@ -35,6 +35,36 @@ const yarnClassicNetworkError = [
 ];
 
 /**
+ * pnpm-specific network error prefixes.
+ * pnpm emits structured error codes like ERR_PNPM_FETCH_404 when a package
+ * cannot be fetched from the registry. These are distinct from the generic
+ * Node.js errno codes and need to be explicitly matched.
+ *
+ * @see https://pnpm.io/next/errors
+ */
+const pnpmNetworkError = [
+    "ERR_PNPM_FETCH_404",
+    "ERR_PNPM_FETCH_001",
+    "ERR_PNPM_FETCH_002",
+    "ERR_PNPM_FETCH_003",
+    "ERR_PNPM_FETCH_004",
+    "ERR_PNPM_FETCH_005",
+];
+
+/**
+ * Yarn Berry (v2+) unique network error patterns.
+ * The structured output format "➤ YN0001: │ ..." is used by Yarn Berry
+ * for error reporting. These codes indicate connectivity issues.
+ *
+ * @see https://yarnpkg.com/advanced/error-codes
+ */
+const yarnBerryNetworkError = [
+    "YN0001",
+    "YN0049",
+    "YN0058",
+];
+
+/**
  * All network error patterns. Used in `spawnChildProcess.ts` via
  * `networkError.some((pattern) => stderr.includes(pattern))`.
  *
@@ -48,5 +78,7 @@ const yarnClassicNetworkError = [
 export default [
     ...npmNetworkError,
     ...yarnClassicNetworkError,
+    ...yarnBerryNetworkError,
+    ...pnpmNetworkError,
     ...nodeNetworkErrors,
 ];

@@ -21,7 +21,7 @@ beforeEach(() => {
     vol.reset()
 })
 
-const mkdtmp = (await import('./mkdtmp.js')).default
+const mkdtmp = (await import('../mkdtmp.js')).default
 
 describe('mkdtmp', () => {
     it('should create a temp directory with UUID in RUNNER_TEMP by default', async () => {

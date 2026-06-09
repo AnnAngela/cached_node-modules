@@ -2,7 +2,6 @@ import { isFeatureAvailable, restoreCache, saveCache } from "@actions/cache";
 import { debug, endGroup, getInput, saveState, setOutput, startGroup } from "@actions/core";
 import fs from "node:fs";
 import path from "node:path";
-import timersPromises from "node:timers/promises";
 import Variable from "./Variable.js";
 import spawnChildProcess from "./spawnChildProcess.js";
 
@@ -84,15 +83,9 @@ for (const variableName of variableNames) {
     debug(`[replacingVariables] \tRun on variableName: ${variableName}`);
     const trimmedVariableName = trimBrackets(variableName);
     debug(`[replacingVariables] \t\ttrimmedVariableName: ${trimmedVariableName}`);
-    // Allow CUSTOM_VARIABLE, PM, PM_VERSION_* derivatives, and any VARIABLE_MAP key
-    if (
-        trimmedVariableName === "CUSTOM_VARIABLE"
-        || trimmedVariableName === "PM"
-        || trimmedVariableName.startsWith("PM_VERSION_")
-        || Reflect.has(Variable.VARIABLE_MAP, trimmedVariableName)
-    ) {
+    if (Variable.isVariableName(trimmedVariableName)) {
         debug(`[replacingVariables] \t\tVariable "${trimmedVariableName}" is in the list.`);
-        const variableValue = await variable.get(trimmedVariableName as any);
+        const variableValue = await variable.get(trimmedVariableName);
         debug(`[replacingVariables] \t\tvariableValue: ${variableValue}`);
         cacheKey = cacheKey.replaceAll(variableName, variableValue);
         debug(`[replacingVariables] \t\tnew cacheKey: ${cacheKey}`);
@@ -108,7 +101,14 @@ const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undef
     timeoutInMs: 1000 * 60 * 5,
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
-await timersPromises.setTimeout(100);
+// Drain process.stdout — restoreCache may have internally written
+// debug/info messages to stdout that are still buffered. Without this
+// drain, process.exit() can cut them off.
+await new Promise<void>((resolve) => {
+    process.stdout.write("", () => {
+        resolve();
+    });
+});
 debug(`restoreCacheResult: ${restoreCacheResult ?? "(undefined)"}`);
 endGroup();
 
@@ -143,4 +143,13 @@ const cacheHit = restoreCacheResult === cacheKey;
 console.info("\tcache-hit:", cacheHit);
 setOutput("cache-hit", cacheHit);
 console.info("Outputs set, exit.");
-await timersPromises.setTimeout(3000);
+// Drain process.stdout before exiting to ensure all buffered
+// ::debug::, ::group:: workflow commands and stdout-piped child
+// process output have been flushed to the GitHub Actions runner.
+// Without this drain, process.exit() can truncate buffered output
+// causing lost workflow logs and intermittent ::set-output failures.
+await new Promise<void>((resolve) => {
+    process.stdout.write("", () => {
+        resolve();
+    });
+});

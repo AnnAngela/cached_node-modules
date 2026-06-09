@@ -14,7 +14,7 @@ beforeEach(() => {
 })
 
 // Must import after mocks are set up
-const { readFile, writeFile } = await import('./jsonModule.js')
+const { readFile, writeFile } = await import('../jsonModule.js')
 
 describe('readFile', () => {
     it('should read and parse a JSON file', async () => {

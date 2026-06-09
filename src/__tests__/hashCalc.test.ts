@@ -19,7 +19,7 @@ vi.mock('node:crypto', async (importOriginal) => {
     }
 })
 
-import { hashCalc, algorithmMap } from './hashCalc.js'
+import { hashCalc, algorithmMap } from '../hashCalc.js'
 
 beforeEach(() => {
     vi.unstubAllEnvs()
