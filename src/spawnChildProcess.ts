@@ -37,7 +37,10 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
         } */
         if (error) {
             debug(`[spawnChildProcess] Command "${command}" failed.`);
-            if (networkError.some((errorCode) => stderr.includes(errorCode))) {
+            // Split stderr into lines and check each line against network error patterns.
+            // This prevents false positives where a non-network error code appears
+            // incidentally in a different context within the same stderr output.
+            if (stderr.split("\n").some((line) => networkError.some((errorCode) => line.includes(errorCode)))) {
                 const retryTime = options.retryTime ?? 3;
                 debug(`[spawnChildProcess] retryTime: ${retryTime}.`);
                 if (retryTime > 0) {

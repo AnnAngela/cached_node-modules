@@ -8,6 +8,9 @@
         "rootDir": "./src",
         "declaration": false,
         "declarationMap": false,
+        "types": [
+            "vitest/globals",
+        ],
     },
     "include": [
         "src",

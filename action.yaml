@@ -7,26 +7,30 @@ branding:
   color: purple
 
 inputs:
+  packageManager:
+    description: The package manager to use (npm, pnpm, or yarn). Affects default lockfilePath, command, and {PM} magic variable.
+    required: false
+    default: npm
   cacheKey:
     description: The key of the cache
     required: false
-    default: cached_node-modules:{OS_NAME}:node@{NODE_VERSION_MAJOR}_{NODE_ARCH}:npm@{NPM_VERSION_MAJOR}:package-lock@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
+    default: cached_node-modules:{OS_NAME}:node@{NODE_VERSION_MAJOR}_{NODE_ARCH}:{PM}@{PM_VERSION_MAJOR}:package-lock@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
   customVariable:
     description: The custom variable to insert to the cache key
     required: false
     default: ""
   command:
-    description: The command to run for installing dependencies
+    description: The command to run for installing dependencies. If empty, defaults based on packageManager.
     required: false
-    default: npm ci
+    default: ""
   cwd:
     description: The working directory
     required: false
     default: .
   lockfilePath:
-    description: The path to the lockfile
+    description: The path to the lockfile. If empty, defaults based on packageManager.
     required: false
-    default: package-lock.json
+    default: ""
   packageJsonPath:
     description: The path to the package.json
     required: false

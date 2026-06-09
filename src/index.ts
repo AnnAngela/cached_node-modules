@@ -13,18 +13,35 @@ if (!isFeatureAvailable()) {
 }
 
 console.info("Parsing input...");
+
+const packageManager = getInput("packageManager") || "npm";
+// Validate packageManager — must be one of the supported values.
+const VALID_PACKAGE_MANAGERS = ["npm", "pnpm", "yarn"] as const;
+if (!(VALID_PACKAGE_MANAGERS as readonly string[]).includes(packageManager)) {
+    throw new Error(`Invalid packageManager "${packageManager}". Must be one of: ${VALID_PACKAGE_MANAGERS.join(", ")}`);
+}
+
+// Map package manager to default lockfile path and install command.
+// Users can override these via explicit lockfilePath / command inputs.
+const PM_DEFAULTS: Record<string, { lockfilePath: string; command: string }> = {
+    npm: { lockfilePath: "package-lock.json", command: "npm ci" },
+    pnpm: { lockfilePath: "pnpm-lock.yaml", command: "pnpm install --frozen-lockfile" },
+    yarn: { lockfilePath: "yarn.lock", command: "yarn install --frozen-lockfile" },
+};
+
 const inputs = {
     cacheKey: getInput("cacheKey"),
     customVariable: getInput("customVariable"),
-    command: getInput("command"),
+    command: getInput("command") || PM_DEFAULTS[packageManager].command,
     cwd: getInput("cwd"),
-    lockfilePath: getInput("lockfilePath"),
+    lockfilePath: getInput("lockfilePath") || PM_DEFAULTS[packageManager].lockfilePath,
     packageJsonPath: getInput("packageJsonPath"),
     networkErrorRetryTime: getInput("networkErrorRetryTime"),
 };
-inputs.networkErrorRetryTime = /^d+$/.test(inputs.networkErrorRetryTime) ? inputs.networkErrorRetryTime : "3";
+inputs.networkErrorRetryTime = /^\d+$/.test(inputs.networkErrorRetryTime) ? inputs.networkErrorRetryTime : "3";
 
 debug(`inputs: ${JSON.stringify(inputs)}`);
+debug(`packageManager: ${packageManager}`);
 
 const lockfilePath = path.join(inputs.cwd, inputs.lockfilePath);
 const packageJsonPath = path.join(inputs.cwd, inputs.packageJsonPath);
@@ -52,20 +69,30 @@ try {
     });
 }
 
-const variable = new Variable(inputs.cwd, lockfilePath, packageJsonPath, inputs.customVariable);
+const variable = new Variable(inputs.cwd, lockfilePath, packageJsonPath, inputs.customVariable, packageManager);
 
 console.info("Replacing variables...");
 const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
-debug(`[replacingVariables] matched variableNames (after removing duplicate variables): ${JSON.stringify(variableNames)}`);
+// Sort by length descending to prevent substring collisions:
+// e.g. {PM_VERSION_MAJOR} (longer) is replaced before {PM} (shorter),
+// so {PM} replacement doesn't corrupt {PM_VERSION_MAJOR}.
+variableNames.sort((a, b) => b.length - a.length);
+debug(`[replacingVariables] matched variableNames (after removing duplicate variables and sorting): ${JSON.stringify(variableNames)}`);
 let cacheKey = inputs.cacheKey;
 debug(`[replacingVariables] [start] cacheKey: ${cacheKey}`);
 for (const variableName of variableNames) {
     debug(`[replacingVariables] \tRun on variableName: ${variableName}`);
     const trimmedVariableName = trimBrackets(variableName);
     debug(`[replacingVariables] \t\ttrimmedVariableName: ${trimmedVariableName}`);
-    if (trimmedVariableName === "CUSTOM_VARIABLE" || Reflect.has(Variable.VARIABLE_MAP, trimmedVariableName)) {
+    // Allow CUSTOM_VARIABLE, PM, PM_VERSION_* derivatives, and any VARIABLE_MAP key
+    if (
+        trimmedVariableName === "CUSTOM_VARIABLE"
+        || trimmedVariableName === "PM"
+        || trimmedVariableName.startsWith("PM_VERSION_")
+        || Reflect.has(Variable.VARIABLE_MAP, trimmedVariableName)
+    ) {
         debug(`[replacingVariables] \t\tVariable "${trimmedVariableName}" is in the list.`);
-        const variableValue = await variable.get(trimmedVariableName as "CUSTOM_VARIABLE" | keyof typeof Variable.VARIABLE_MAP);
+        const variableValue = await variable.get(trimmedVariableName as any);
         debug(`[replacingVariables] \t\tvariableValue: ${variableValue}`);
         cacheKey = cacheKey.replaceAll(variableName, variableValue);
         debug(`[replacingVariables] \t\tnew cacheKey: ${cacheKey}`);
