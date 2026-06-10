@@ -497,8 +497,8 @@ describe("index", () => {
 
             await import("../index.js");
 
-            // LOCKFILE should be "package-lock" for npm
-            expect(mockSetOutput).toHaveBeenCalledWith("cacheKey", "package-lock:rest");
+            // LOCKFILE should be "package-lock.json" for npm
+            expect(mockSetOutput).toHaveBeenCalledWith("cacheKey", "package-lock.json:rest");
             expect(mockSetOutput).toHaveBeenCalledWith("cache-hit", false);
         });
     });

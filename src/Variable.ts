@@ -99,12 +99,12 @@ export default class Variable {
         // PACKAGEJSON — covers PACKAGEJSON_HASH_* and PACKAGEJSON_GIT_COMMIT_*
         return await fn(this.packageJsonPath);
     }
-    // Mapping from package manager to lockfile base name (without extension).
+    // Mapping from package manager to lockfile name (with extension).
     // Used by the {LOCKFILE} magic variable.
     private static readonly PM_LOCKFILE_MAP: Record<string, string> = {
-        npm: "package-lock",
-        pnpm: "pnpm-lock",
-        yarn: "yarn",
+        npm: "package-lock.json",
+        pnpm: "pnpm-lock.yaml",
+        yarn: "yarn.lock",
     };
     /**
      * Type guard: checks whether `name` is a recognised variable name
@@ -128,7 +128,7 @@ export default class Variable {
             return this.packageManager;
         }
         if (variableName === "LOCKFILE") {
-            const lockfileName = Variable.PM_LOCKFILE_MAP[this.packageManager] ?? "package-lock";
+            const lockfileName = Variable.PM_LOCKFILE_MAP[this.packageManager] ?? "package-lock.json";
             debug(`[Variable] variableName is "LOCKFILE", returning lockfileName: ${lockfileName}`);
             return lockfileName;
         }

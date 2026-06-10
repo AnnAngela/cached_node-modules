@@ -59,7 +59,7 @@ You can get these outputs from the action (The GitHub Actions output is always s
 
 * `cacheKey`: The generated cache key
 
-  Example: `"cached_node-modules:linux:node@20_x64:npm@10:package-lock@1a2b3c4"`
+  Example: `"cached_node-modules:linux:node@20_x64:npm@10:package-lock.json@1a2b3c4"`
 
 * `variables`: A JSON string contains all the variables **used** in `cacheKey` (also included the variables used internally)
 
@@ -149,9 +149,9 @@ You can use these magic variables in the `cacheKey` to generate different cache 
 
 * `{LOCKFILE}`:
 
-  Description: The lockfile base name (without extension), determined by the `packageManager` input. Useful to distinguish lockfile types in the cache key.
+  Description: The lockfile name (with extension), determined by the `packageManager` input. Useful to distinguish lockfile types in the cache key.
 
-  Example: `package-lock` (npm), `pnpm-lock` (pnpm), or `yarn` (yarn)
+  Example: `package-lock.json` (npm), `pnpm-lock.yaml` (pnpm), or `yarn.lock` (yarn)
 
 * `{LOCKFILE_GIT_COMMIT_LONG}`:
 

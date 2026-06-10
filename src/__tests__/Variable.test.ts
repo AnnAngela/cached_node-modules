@@ -195,20 +195,20 @@ describe("Variable", () => {
         });
     });
 
-    describe("LOCKFILE — lockfile base name variable", () => {
-        it('should return "package-lock" when packageManager is npm', async () => {
+    describe("LOCKFILE — lockfile name with extension variable", () => {
+        it('should return "package-lock.json" when packageManager is npm', async () => {
             const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "npm");
-            expect(await v.get("LOCKFILE")).toBe("package-lock");
+            expect(await v.get("LOCKFILE")).toBe("package-lock.json");
         });
 
-        it('should return "pnpm-lock" when packageManager is pnpm', async () => {
+        it('should return "pnpm-lock.yaml" when packageManager is pnpm', async () => {
             const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "pnpm");
-            expect(await v.get("LOCKFILE")).toBe("pnpm-lock");
+            expect(await v.get("LOCKFILE")).toBe("pnpm-lock.yaml");
         });
 
-        it('should return "yarn" when packageManager is yarn', async () => {
+        it('should return "yarn.lock" when packageManager is yarn', async () => {
             const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "yarn");
-            expect(await v.get("LOCKFILE")).toBe("yarn");
+            expect(await v.get("LOCKFILE")).toBe("yarn.lock");
         });
 
         it("should not call spawnChildProcess for LOCKFILE", async () => {
@@ -217,9 +217,9 @@ describe("Variable", () => {
             expect(mockSpawn).not.toHaveBeenCalled();
         });
 
-        it('should fallback to "package-lock" for unknown packageManager', async () => {
+        it('should fallback to "package-lock.json" for unknown packageManager', async () => {
             const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "unknown");
-            expect(await v.get("LOCKFILE")).toBe("package-lock");
+            expect(await v.get("LOCKFILE")).toBe("package-lock.json");
         });
     });
 
