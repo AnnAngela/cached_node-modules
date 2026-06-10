@@ -501,5 +501,40 @@ describe("index", () => {
             expect(mockSetOutput).toHaveBeenCalledWith("cacheKey", "package-lock.json:rest");
             expect(mockSetOutput).toHaveBeenCalledWith("cache-hit", false);
         });
+
+        it("should replace {PM_VERSION} in cacheKey", async () => {
+            mockIsFeatureAvailable.mockReturnValue(true);
+            mockRestoreCache.mockResolvedValue(undefined);
+            mockSaveCache.mockResolvedValue(999);
+            setupFiles("pnpm", "/project/pnpm-lock.yaml");
+            setInput("packageManager", "pnpm");
+            setInput("cwd", "/project");
+            // Use {PM_VERSION} — this was previously unrecognised by isVariableName
+            setInput("cacheKey", "{PM}@{PM_VERSION}:rest");
+            setInput("command", "pnpm install --frozen-lockfile");
+
+            const spawnResults: Record<string, string> = {
+                "pnpm --version": "9.2.1",
+                "pnpm install --frozen-lockfile": "installed",
+            };
+
+            mockExecFile.mockImplementation(
+                (cmd: string, args: string[], _opts: unknown, cb: ExecFileCallback) => {
+                    const fullCmd = [cmd, ...args].join(" ");
+                    if (Object.hasOwn(spawnResults, fullCmd)) {
+                        cb(null, `${spawnResults[fullCmd]}\n`, "");
+                    } else {
+                        cb(null, "", "");
+                    }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } };
+                },
+            );
+
+            await import("../index.js");
+
+            // PM_VERSION should be replaced to "9.2.1", not left as literal
+            expect(mockSetOutput).toHaveBeenCalledWith("cacheKey", "pnpm@9.2.1:rest");
+            expect(mockSetOutput).toHaveBeenCalledWith("cache-hit", false);
+        });
     });
 });

@@ -57,7 +57,7 @@ interface packageLockJSON {
 }
 
 const prepare = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath, content?: string) => {
-    console.info("Found package-lock.json as lockfile, copy to tmp dir and remove unnecessary fields...");
+    console.info(`Found ${lockfileParsedPath.base} as lockfile, copy to tmp dir and remove unnecessary fields...`);
     const tmpdir = await mkdtmp();
     const newLockfilePath = path.join(tmpdir, lockfileParsedPath.base);
     console.info("New lockfilePath:", newLockfilePath);

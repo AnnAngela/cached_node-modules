@@ -19,6 +19,7 @@ mkdir -p "$DIST_DIR"
 mkdir -p "$CACHE_DIR"
 
 # Build index and post in parallel — they share no state.
+pids=()
 for target in "${SRC_TARGETS[@]}"; do
     echo "-------------------------------------------------------------------------"
     echo "Packaging ${target}.ts..."
@@ -38,8 +39,14 @@ for target in "${SRC_TARGETS[@]}"; do
         --platform=node \
         --target=node24 \
         &
+    pids+=($!)
 done
-wait  # Reap parallel builds
+# Wait for each background job individually — `wait` without arguments
+# only returns the exit status of the last job, which can mask earlier
+# esbuild failures.
+for pid in "${pids[@]}"; do
+    wait "$pid" || exit 1
+done
 
 echo "-------------------------------------------------------------------------"
 node -e "require('fs').writeFileSync('$DIST_DIR/package.json', JSON.stringify({type:'module'}) + '\n')"

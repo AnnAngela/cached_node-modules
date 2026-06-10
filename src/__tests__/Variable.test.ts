@@ -375,11 +375,36 @@ describe("Variable", () => {
         });
     });
 
+    describe("isVariableName", () => {
+        it("should recognise PM_VERSION as a valid variable name", () => {
+            expect(Variable.isVariableName("PM_VERSION")).toBe(true);
+        });
+
+        it("should recognise PM, LOCKFILE, CUSTOM_VARIABLE as valid", () => {
+            expect(Variable.isVariableName("PM")).toBe(true);
+            expect(Variable.isVariableName("LOCKFILE")).toBe(true);
+            expect(Variable.isVariableName("CUSTOM_VARIABLE")).toBe(true);
+        });
+
+        it("should recognise PM_VERSION_MAJOR/MINOR/PATCH as valid", () => {
+            expect(Variable.isVariableName("PM_VERSION_MAJOR")).toBe(true);
+            expect(Variable.isVariableName("PM_VERSION_MINOR")).toBe(true);
+            expect(Variable.isVariableName("PM_VERSION_PATCH")).toBe(true);
+        });
+
+        it("should recognise OS_NAME as valid", () => {
+            expect(Variable.isVariableName("OS_NAME")).toBe(true);
+        });
+
+        it("should reject unknown variable names", () => {
+            expect(Variable.isVariableName("UNKNOWN_VAR")).toBe(false);
+        });
+    });
+
     describe("invalid variable name", () => {
         it("should throw for unknown variable", async () => {
             const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "npm");
-            // @ts-expect-error -- intentionally testing an invalid variable name
-            await expect(v.get("UNKNOWN_VAR")).rejects.toThrow();
+            await expect(v.get("UNKNOWN_VAR" as any)).rejects.toThrow();
         });
     });
 
