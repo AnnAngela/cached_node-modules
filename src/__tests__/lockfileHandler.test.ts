@@ -9,12 +9,9 @@ vi.mock("node:fs/promises", () => ({
     ...memfs.promises,
 }));
 
-// Mock dependencies for mkdtmp and jsonModule used by lockfileHandler
+// Mock dependency for mkdtmp — os.tmpdir()
 vi.mock("node:os", () => ({
     tmpdir: () => "/tmp",
-}));
-vi.mock("node:crypto", () => ({
-    randomUUID: () => "test-uuid",
 }));
 
 import {
@@ -28,7 +25,10 @@ import {
 beforeEach(() => {
     vi.unstubAllEnvs();
     vol.reset();
+    // Ensure the temp directory exists in the virtual filesystem so that
+    // memfs's mkdtemp (used by mkdtmp) can create child directories.
     vi.stubEnv("RUNNER_TEMP", "/tmp/_runner_temp");
+    vol.mkdirSync("/tmp/_runner_temp", { recursive: true });
 });
 
 describe("packageLockHandler (npm)", () => {

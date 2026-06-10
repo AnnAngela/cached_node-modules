@@ -25,7 +25,10 @@ import { hashCalc, algorithmMap } from "../hashCalc.js";
 beforeEach(() => {
     vi.unstubAllEnvs();
     vol.reset();
+    // Ensure the temp directory exists in the virtual filesystem so that
+    // memfs's mkdtemp (used by mkdtmp) can create child directories.
     vi.stubEnv("RUNNER_TEMP", "/tmp/runner");
+    vol.mkdirSync("/tmp/runner", { recursive: true });
 });
 
 describe("hashCalc", () => {
