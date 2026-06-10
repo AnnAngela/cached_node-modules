@@ -74,7 +74,7 @@ try {
 const variable = new Variable(inputs.cwd, lockfilePath, packageJsonPath, inputs.customVariable, packageManager);
 
 console.info("Replacing variables...");
-const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
+const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g) ?? [])];
 // Sort by length descending to prevent substring collisions:
 // e.g. {PM_VERSION_MAJOR} (longer) is replaced before {PM} (shorter),
 // so {PM} replacement doesn't corrupt {PM_VERSION_MAJOR}.

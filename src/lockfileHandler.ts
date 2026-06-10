@@ -110,12 +110,12 @@ export const pnpmLockHandler = async (lockfilePath: string, lockfileParsedPath: 
     try {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const raw = YAML.parse(content);
-        if (typeof raw !== "object" || raw === null) {
+        if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
             throw new Error(`Failed to parse pnpm-lock.yaml: expected an object, got ${typeof raw}`);
         }
         parsed = raw as Record<string, unknown>;
     } catch (cause) {
-        // YAML.parse always throws Error instances, and line 113 throws a new Error as well.
+        // YAML.parse always throws Error instances, and line 114 throws a new Error as well.
         throw new Error(`Failed to parse pnpm-lock.yaml at "${lockfilePath}": ${(cause as Error).message}`, {
             cause,
         });
@@ -177,7 +177,7 @@ export const yarnBerryLockHandler = async (lockfilePath: string, lockfileParsedP
     try {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const raw = YAML.parse(fileContent);
-        if (typeof raw !== "object" || raw === null) {
+        if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
             throw new Error(`Failed to parse yarn.lock (Berry): expected an object, got ${typeof raw}`);
         }
         parsed = raw as Record<string, unknown>;
