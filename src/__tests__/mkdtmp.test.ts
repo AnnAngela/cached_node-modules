@@ -17,8 +17,10 @@ vi.mock("node:crypto", () => ({
 
 // Mock process.env.RUNNER_TEMP
 beforeEach(() => {
-    vi.unstubAllEnvs();
     vol.reset();
+    // 显式删除 RUNNER_TEMP 以防 CI 环境中该变量已设置
+    // 这样 fallback 到 os.tmpdir()（被 mock 为 /tmp）的逻辑才能正确运作
+    delete process.env.RUNNER_TEMP;
 });
 
 const mkdtmp = (await import("../mkdtmp.js")).default;
