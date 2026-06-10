@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import mkdtmp from "./mkdtmp.js";
+import YAML from "yaml";
 import jsonModule from "./jsonModule.js";
+import mkdtmp from "./mkdtmp.js";
 
 type dependencyType = {
     dev: true;
@@ -104,7 +105,6 @@ export const packageLockHandler = async (lockfilePath: string, lockfileParsedPat
  */
 export const pnpmLockHandler = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath) => {
     const { tmpdir, newLockfilePath } = await prepare(lockfilePath, lockfileParsedPath);
-    const YAML = (await import("yaml")).default;
     const content = await fs.promises.readFile(newLockfilePath, "utf-8");
     let parsed: Record<string, unknown>;
     try {
@@ -171,7 +171,6 @@ export const yarnClassicLockHandler = async (lockfilePath: string, lockfileParse
  */
 export const yarnBerryLockHandler = async (lockfilePath: string, lockfileParsedPath: path.ParsedPath, content?: string) => {
     const { tmpdir, newLockfilePath } = await prepare(lockfilePath, lockfileParsedPath, content);
-    const YAML = (await import("yaml")).default;
     const fileContent = content ?? await fs.promises.readFile(newLockfilePath, "utf-8");
     let parsed: Record<string, unknown>;
     try {

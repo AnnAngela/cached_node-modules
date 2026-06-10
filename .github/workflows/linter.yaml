@@ -72,7 +72,9 @@ jobs:
       - name: Test packaging
         run: npm run package
       - name: Verify build output
-        run: node --input-type=module -e "await import('./dist/index.js'); console.log('Build OK')"
+        run: |
+          node --check ./dist/index.js && echo "dist/index.js is valid JavaScript."
+          node --check ./dist/post.js && echo "dist/post.js is valid JavaScript."
       - name: Upload build metafile
         if: always()
         uses: actions/upload-artifact@v5

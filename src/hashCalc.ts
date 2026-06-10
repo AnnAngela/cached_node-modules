@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import YAML from "yaml";
 import {
     packageLockHandler,
     pnpmLockHandler,
@@ -32,7 +33,6 @@ const detectYarnHandler = async (filePath: string, parsedPath: path.ParsedPath) 
     }
     // Attempt YAML parse to check for __metadata (Yarn Berry indicator)
     try {
-        const YAML = (await import("yaml")).default;
         const parsed = YAML.parse(content) as unknown;
         if (parsed && typeof parsed === "object" && Reflect.has(parsed, "__metadata")) {
             return await yarnBerryLockHandler(filePath, parsedPath, content);
