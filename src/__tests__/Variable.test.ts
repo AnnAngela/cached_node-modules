@@ -404,6 +404,7 @@ describe("Variable", () => {
     describe("invalid variable name", () => {
         it("should throw for unknown variable", async () => {
             const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "npm");
+            // @ts-expect-error -- intentionally testing an invalid variable name
             await expect(v.get("UNKNOWN_VAR")).rejects.toThrow();
         });
     });
