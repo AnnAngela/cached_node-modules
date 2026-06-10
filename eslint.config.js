@@ -22,6 +22,7 @@ const config = [
     // Global ignores — matches ESLint flat config semantics
     {
         ignores: [
+            "**/dist/**",
             "coverage/",
             "**/coverage/",
         ],
