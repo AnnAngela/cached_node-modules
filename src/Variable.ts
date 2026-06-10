@@ -113,7 +113,9 @@ export default class Variable {
     static isVariableName = (name: string): name is VariableName => name === "CUSTOM_VARIABLE"
         || name === "PM"
         || name === "LOCKFILE"
-        || name.startsWith("PM_VERSION_")
+        || name === "PM_VERSION_MAJOR"
+        || name === "PM_VERSION_MINOR"
+        || name === "PM_VERSION_PATCH"
         || Reflect.has(Variable.VARIABLE_MAP_BASE, name);
     async get(variableName: VariableName): Promise<string> {
         debug(`[Variable] variableName: ${variableName}`);
