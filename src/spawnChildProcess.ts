@@ -65,11 +65,18 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
             // Split stderr into lines and check each line against network error patterns.
             // This prevents false positives where a non-network error code appears
             // incidentally in a different context within the same stderr output.
-            if (stderr.split("\n").some((line) => networkError.some((errorCode) => line.includes(errorCode)))) {
+            const isNetworkError = stderr.split("\n").some((line) => networkError.some((errorCode) => line.includes(errorCode)));
+            // npm may fail with "Exit handler never called!" on certain Node.js/npm
+            // version combinations — this is an npm internal error, not a network error,
+            // but retrying often succeeds because the underlying cause is transient
+            // (network glitches during parallel fetches, OOM on CI runners, etc.).
+            const isNpmInternalError = stderr.includes("Exit handler never called!");
+            if (isNetworkError || isNpmInternalError) {
                 const retryTime = options.retryTime ?? 3;
                 debug(`[spawnChildProcess] retryTime: ${retryTime}.`);
                 if (retryTime > 0) {
-                    console.info("[spawnChildProcess] Network error detected, retrying...");
+                    const reason = isNpmInternalError ? "npm internal error (Exit handler never called!)" : "Network error";
+                    console.info(`[spawnChildProcess] ${reason} detected, retrying...`);
                     setTimeout(() => {
                         // `res(innerPromise)` is valid per Promise/A+ — the outer
                         // promise resolves/rejects with the inner promise's outcome.
@@ -91,10 +98,10 @@ const execCommand = (command: string, options: SpawnChildProcessOptions): Promis
         }
     });
     if (options.synchronousStdout) {
-        childProcess.stdout.pipe(process.stdout);
+        childProcess.stdout?.pipe(process.stdout);
     }
     if (options.synchronousStderr) {
-        childProcess.stderr.pipe(process.stderr);
+        childProcess.stderr?.pipe(process.stderr);
     }
 });
 export default execCommand;
