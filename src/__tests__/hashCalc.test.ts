@@ -1,103 +1,106 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { vol, fs as memfs } from 'memfs'
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { vol, fs as memfs } from "memfs";
 
-vi.mock('node:fs', () => ({
-    default: memfs,
-}))
-vi.mock('node:fs/promises', () => ({
-    default: memfs.promises,
+vi.mock("node:fs", () => ({
+    "default": memfs,
+}));
+vi.mock("node:fs/promises", () => ({
+    "default": memfs.promises,
     ...memfs.promises,
-}))
-vi.mock('node:os', () => ({
-    tmpdir: () => '/tmp',
-}))
-vi.mock('node:crypto', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('node:crypto')>()
+}));
+vi.mock("node:os", () => ({
+    tmpdir: () => "/tmp",
+}));
+vi.mock("node:crypto", async (importOriginal) => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    const actual = await importOriginal<typeof import("node:crypto")>();
     return {
         ...actual,
-        randomUUID: () => 'test-uuid',
-    }
-})
+        randomUUID: () => "test-uuid",
+    };
+});
 
-import { hashCalc, algorithmMap } from '../hashCalc.js'
+import { hashCalc, algorithmMap } from "../hashCalc.js";
 
 beforeEach(() => {
-    vi.unstubAllEnvs()
-    vol.reset()
-    vi.stubEnv('RUNNER_TEMP', '/tmp/runner')
-})
+    vi.unstubAllEnvs();
+    vol.reset();
+    vi.stubEnv("RUNNER_TEMP", "/tmp/runner");
+});
 
-describe('hashCalc', () => {
-    describe('algorithm mapping', () => {
-        it('should map SHA2_256 to sha256', () => {
-            expect(algorithmMap.SHA2_256).toBe('sha256')
-        })
-        it('should map SHA2_512 to sha512', () => {
-            expect(algorithmMap.SHA2_512).toBe('sha512')
-        })
-        it('should map SHA3_256 to sha3-256', () => {
-            expect(algorithmMap.SHA3_256).toBe('sha3-256')
-        })
-        it('should map SHA3_512 to sha3-512', () => {
-            expect(algorithmMap.SHA3_512).toBe('sha3-512')
-        })
-    })
+describe("hashCalc", () => {
+    describe("algorithm mapping", () => {
+        it("should map SHA2_256 to sha256", () => {
+            expect(algorithmMap.SHA2_256).toBe("sha256");
+        });
+        it("should map SHA2_512 to sha512", () => {
+            expect(algorithmMap.SHA2_512).toBe("sha512");
+        });
+        it("should map SHA3_256 to sha3-256", () => {
+            expect(algorithmMap.SHA3_256).toBe("sha3-256");
+        });
+        it("should map SHA3_512 to sha3-512", () => {
+            expect(algorithmMap.SHA3_512).toBe("sha3-512");
+        });
+    });
 
-    describe('package-lock.json', () => {
-        it('should hash via packageLockHandler for each algorithm', async () => {
+    describe("package-lock.json", () => {
+        it("should hash via packageLockHandler for each algorithm", async () => {
             const lockfile = JSON.stringify({
                 lockfileVersion: 3,
                 packages: {
-                    'node_modules/foo': { version: '1.0.0' },
+                    "node_modules/foo": { version: "1.0.0" },
                 },
-            })
+            });
 
             vol.fromJSON({
-                '/project/package-lock.json': lockfile,
-            })
+                "/project/package-lock.json": lockfile,
+            });
 
-            const sha256 = await hashCalc('/project/package-lock.json', 'SHA2_256')
-            const sha512 = await hashCalc('/project/package-lock.json', 'SHA2_512')
-            const sha3_256 = await hashCalc('/project/package-lock.json', 'SHA3_256')
-            const sha3_512 = await hashCalc('/project/package-lock.json', 'SHA3_512')
+            const sha256 = await hashCalc("/project/package-lock.json", "SHA2_256");
+            const sha512 = await hashCalc("/project/package-lock.json", "SHA2_512");
+            // eslint-disable-next-line camelcase
+            const sha3_256 = await hashCalc("/project/package-lock.json", "SHA3_256");
+            // eslint-disable-next-line camelcase
+            const sha3_512 = await hashCalc("/project/package-lock.json", "SHA3_512");
 
             // All should produce hex strings
-            expect(sha256).toMatch(/^[0-9a-f]{64}$/)
-            expect(sha512).toMatch(/^[0-9a-f]{128}$/)
-            expect(sha3_256).toMatch(/^[0-9a-f]{64}$/)
-            expect(sha3_512).toMatch(/^[0-9a-f]{128}$/)
+            expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+            expect(sha512).toMatch(/^[0-9a-f]{128}$/);
+            expect(sha3_256).toMatch(/^[0-9a-f]{64}$/);
+            expect(sha3_512).toMatch(/^[0-9a-f]{128}$/);
             // Different algorithms produce different hashes
-            expect(sha256).not.toBe(sha512)
-            expect(sha3_256).not.toBe(sha3_512)
-        })
+            expect(sha256).not.toBe(sha512);
+            expect(sha3_256).not.toBe(sha3_512);
+        });
 
-        it('should produce same hash for identical content', async () => {
+        it("should produce same hash for identical content", async () => {
             vol.fromJSON({
-                '/a/package-lock.json': JSON.stringify({ lockfileVersion: 3, packages: { x: { version: '1.0.0' } } }),
-                '/b/package-lock.json': JSON.stringify({ lockfileVersion: 3, packages: { x: { version: '1.0.0' } } }),
-            })
+                "/a/package-lock.json": JSON.stringify({ lockfileVersion: 3, packages: { x: { version: "1.0.0" } } }),
+                "/b/package-lock.json": JSON.stringify({ lockfileVersion: 3, packages: { x: { version: "1.0.0" } } }),
+            });
 
-            const h1 = await hashCalc('/a/package-lock.json', 'SHA2_256')
-            const h2 = await hashCalc('/b/package-lock.json', 'SHA2_256')
-            expect(h1).toBe(h2)
-        })
+            const h1 = await hashCalc("/a/package-lock.json", "SHA2_256");
+            const h2 = await hashCalc("/b/package-lock.json", "SHA2_256");
+            expect(h1).toBe(h2);
+        });
 
-        it('should produce different hash for different content', async () => {
+        it("should produce different hash for different content", async () => {
             vol.fromJSON({
-                '/a/package-lock.json': JSON.stringify({ lockfileVersion: 3, packages: { x: { version: '1.0.0' } } }),
-                '/b/package-lock.json': JSON.stringify({ lockfileVersion: 3, packages: { x: { version: '2.0.0' } } }),
-            })
+                "/a/package-lock.json": JSON.stringify({ lockfileVersion: 3, packages: { x: { version: "1.0.0" } } }),
+                "/b/package-lock.json": JSON.stringify({ lockfileVersion: 3, packages: { x: { version: "2.0.0" } } }),
+            });
 
-            const h1 = await hashCalc('/a/package-lock.json', 'SHA2_256')
-            const h2 = await hashCalc('/b/package-lock.json', 'SHA2_256')
-            expect(h1).not.toBe(h2)
-        })
-    })
+            const h1 = await hashCalc("/a/package-lock.json", "SHA2_256");
+            const h2 = await hashCalc("/b/package-lock.json", "SHA2_256");
+            expect(h1).not.toBe(h2);
+        });
+    });
 
-    describe('pnpm-lock.yaml', () => {
-        it('should hash via pnpmLockHandler', async () => {
+    describe("pnpm-lock.yaml", () => {
+        it("should hash via pnpmLockHandler", async () => {
             vol.fromJSON({
-                '/project/pnpm-lock.yaml': `lockfileVersion: '9.0'
+                "/project/pnpm-lock.yaml": `lockfileVersion: '9.0'
 
 importers:
   .: {}
@@ -113,21 +116,21 @@ snapshots:
 time:
   /foo/1.0.0: '2024-01-01T00:00:00.000Z'
 `,
-            })
+            });
 
-            const sha256 = await hashCalc('/project/pnpm-lock.yaml', 'SHA2_256')
-            const sha512 = await hashCalc('/project/pnpm-lock.yaml', 'SHA2_512')
+            const sha256 = await hashCalc("/project/pnpm-lock.yaml", "SHA2_256");
+            const sha512 = await hashCalc("/project/pnpm-lock.yaml", "SHA2_512");
 
-            expect(sha256).toMatch(/^[0-9a-f]{64}$/)
-            expect(sha512).toMatch(/^[0-9a-f]{128}$/)
-            expect(sha256).not.toBe(sha512)
-        })
-    })
+            expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+            expect(sha512).toMatch(/^[0-9a-f]{128}$/);
+            expect(sha256).not.toBe(sha512);
+        });
+    });
 
-    describe('yarn.lock Classic v1', () => {
-        it('should hash via yarnClassicLockHandler', async () => {
+    describe("yarn.lock Classic v1", () => {
+        it("should hash via yarnClassicLockHandler", async () => {
             vol.fromJSON({
-                '/project/yarn.lock': `# THIS IS AN AUTOGENERATED FILE. DO NOT EDIT THIS FILE DIRECTLY.
+                "/project/yarn.lock": `# THIS IS AN AUTOGENERATED FILE. DO NOT EDIT THIS FILE DIRECTLY.
 # yarn lockfile v1
 
 foo@^1.0.0:
@@ -135,17 +138,17 @@ foo@^1.0.0:
   resolved "https://registry.yarnpkg.com/foo/-/foo-1.0.0.tgz"
   integrity sha512-abc123
 `,
-            })
+            });
 
-            const sha256 = await hashCalc('/project/yarn.lock', 'SHA2_256')
-            expect(sha256).toMatch(/^[0-9a-f]{64}$/)
-        })
-    })
+            const sha256 = await hashCalc("/project/yarn.lock", "SHA2_256");
+            expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+        });
+    });
 
-    describe('yarn.lock Berry', () => {
-        it('should hash via yarnBerryLockHandler', async () => {
+    describe("yarn.lock Berry", () => {
+        it("should hash via yarnBerryLockHandler", async () => {
             vol.fromJSON({
-                '/project/yarn.lock': `__metadata:
+                "/project/yarn.lock": `__metadata:
   version: 10
   cacheKey: 10
 
@@ -154,42 +157,42 @@ foo@npm:^1.0.0:
   languageName: node
   linkType: hard
 `,
-            })
+            });
 
-            const sha256 = await hashCalc('/project/yarn.lock', 'SHA2_256')
-            expect(sha256).toMatch(/^[0-9a-f]{64}$/)
-        })
-    })
+            const sha256 = await hashCalc("/project/yarn.lock", "SHA2_256");
+            expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+        });
+    });
 
-    describe('other files', () => {
-        it('should directly hash non-lockfile files', async () => {
+    describe("other files", () => {
+        it("should directly hash non-lockfile files", async () => {
             vol.fromJSON({
-                '/project/foo.txt': 'hello world',
-            })
+                "/project/foo.txt": "hello world",
+            });
 
-            const sha256 = await hashCalc('/project/foo.txt', 'SHA2_256')
-            expect(sha256).toMatch(/^[0-9a-f]{64}$/)
-        })
+            const sha256 = await hashCalc("/project/foo.txt", "SHA2_256");
+            expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+        });
 
-        it('should hash package.json directly (no special handling)', async () => {
+        it("should hash package.json directly (no special handling)", async () => {
             vol.fromJSON({
-                '/project/package.json': '{"name":"test"}',
-            })
+                "/project/package.json": '{"name":"test"}',
+            });
 
-            const sha256 = await hashCalc('/project/package.json', 'SHA2_256')
-            expect(sha256).toMatch(/^[0-9a-f]{64}$/)
-        })
-    })
+            const sha256 = await hashCalc("/project/package.json", "SHA2_256");
+            expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+        });
+    });
 
-    describe('unrecognized yarn.lock format', () => {
-        it('should fall back to raw stream hash for unrecognized yarn.lock', async () => {
+    describe("unrecognized yarn.lock format", () => {
+        it("should fall back to raw stream hash for unrecognized yarn.lock", async () => {
             // A file named yarn.lock that is neither Classic v1 nor Berry
             vol.fromJSON({
-                '/project/yarn.lock': 'unrecognized-format-content',
-            })
+                "/project/yarn.lock": "unrecognized-format-content",
+            });
 
-            const sha256 = await hashCalc('/project/yarn.lock', 'SHA2_256')
-            expect(sha256).toMatch(/^[0-9a-f]{64}$/)
-        })
-    })
-})
+            const sha256 = await hashCalc("/project/yarn.lock", "SHA2_256");
+            expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+        });
+    });
+});
