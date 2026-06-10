@@ -12,13 +12,13 @@ vi.mock("node:os", () => ({
     tmpdir: () => "/tmp",
 }));
 
-beforeEach(() => {
+beforeEach(async () => {
     vol.reset();
     // Ensure parent directories exist in the virtual filesystem so that
     // memfs's native mkdtemp can create child directories without ENOENT.
     // mkdtemp is NOT mocked — memfs's own implementation is used, which
     // validates that the real mkdtemp integration works correctly.
-    vol.mkdirSync("/tmp", { recursive: true });
+    await memfs.promises.mkdir("/tmp", { recursive: true });
     Reflect.deleteProperty(process.env, "RUNNER_TEMP");
 });
 
@@ -28,7 +28,7 @@ describe("mkdtmp", () => {
     describe("random: true (default) — uses mkdtemp for atomic directory creation", () => {
         it("should use mkdtemp with RUNNER_TEMP when set", async () => {
             vi.stubEnv("RUNNER_TEMP", "/runner/temp");
-            vol.mkdirSync("/runner/temp", { recursive: true });
+            await memfs.promises.mkdir("/runner/temp", { recursive: true });
 
             const result = await mkdtmp();
 
@@ -46,7 +46,7 @@ describe("mkdtmp", () => {
         });
 
         it("should use local .tmp directory when local is true", async () => {
-            vol.mkdirSync(".tmp", { recursive: true });
+            await memfs.promises.mkdir(".tmp", { recursive: true });
 
             const result = await mkdtmp({ local: true });
 
@@ -64,7 +64,7 @@ describe("mkdtmp", () => {
         });
 
         it("should combine local and subDir with mkdtemp", async () => {
-            vol.mkdirSync(".tmp", { recursive: true });
+            await memfs.promises.mkdir(".tmp", { recursive: true });
 
             const result = await mkdtmp({ local: true, subDir: "my-app-tmp" });
 

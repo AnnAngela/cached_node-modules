@@ -22,13 +22,13 @@ import {
 } from "../lockfileHandler.js";
 // Note: these exports may not exist yet — they will be added in the implementation phase
 
-beforeEach(() => {
+beforeEach(async () => {
     vi.unstubAllEnvs();
     vol.reset();
     // Ensure the temp directory exists in the virtual filesystem so that
     // memfs's mkdtemp (used by mkdtmp) can create child directories.
     vi.stubEnv("RUNNER_TEMP", "/tmp/_runner_temp");
-    vol.mkdirSync("/tmp/_runner_temp", { recursive: true });
+    await memfs.promises.mkdir("/tmp/_runner_temp", { recursive: true });
 });
 
 describe("packageLockHandler (npm)", () => {

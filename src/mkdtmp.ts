@@ -25,7 +25,7 @@ export interface mkdtmpOptions {
 export default async (options: mkdtmpOptions = {}) => {
     const local = typeof options.local === "boolean" ? options.local : false;
     const random = typeof options.random === "boolean" ? options.random : true;
-    const baseDir = local ? ".tmp" : (process.env.RUNNER_TEMP ?? tmpdir());
+    const baseDir = local ? ".tmp" : process.env.RUNNER_TEMP ?? tmpdir();
 
     if (random) {
         // Use mkdtemp for atomic directory creation. The trailing X's are

@@ -121,6 +121,7 @@ export default class Variable {
 
         // 2. Look up the resolver — if missing, the VariableName type guard was bypassed.
         const resolver = Variable.VARIABLE_MAP_BASE[variableName];
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the type guard can be bypassed at runtime
         if (!resolver) {
             throw new Error(`Variable "${variableName}" is not defined.`);
         }
