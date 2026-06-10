@@ -71,3 +71,11 @@ jobs:
         run: npm run test
       - name: Test packaging
         run: npm run package
+      - name: Verify build output
+        run: node --input-type=module -e "await import('./dist/index.js'); console.log('Build OK')"
+      - name: Upload build metafile
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: esbuild-metafiles
+          path: .cache/*-meta.json
