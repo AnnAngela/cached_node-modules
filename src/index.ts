@@ -1,5 +1,5 @@
 import { isFeatureAvailable, restoreCache, saveCache } from "@actions/cache";
-import { debug, endGroup, getInput, saveState, setOutput, startGroup } from "@actions/core";
+import { debug, endGroup, getInput, saveState, setOutput, startGroup, warning } from "@actions/core";
 import fs from "node:fs";
 import path from "node:path";
 import Variable from "./Variable.js";
@@ -92,6 +92,13 @@ for (const variableName of variableNames) {
         debug(`[replacingVariables] \t\tvariableValue: ${variableValue}`);
         cacheKey = cacheKey.replaceAll(variableName, variableValue);
         debug(`[replacingVariables] \t\tnew cacheKey: ${cacheKey}`);
+    } else {
+        // Variable name not recognized — the literal will stay in the
+        // cacheKey as-is, causing cache-miss forever. Warn the user so
+        // they can fix typos or migrate deprecated names.
+        warning(
+            `Unknown variable "${variableName}" in cacheKey — it will be left as-is. Check for typos or see README for available magic variables.`,
+        );
     }
 }
 cacheKey = cacheKey.trim();

@@ -1,4 +1,4 @@
-import { debug } from "@actions/core";
+import { debug, warning } from "@actions/core";
 import semver from "semver";
 import spawnChildProcess from "./spawnChildProcess.js";
 import { hashCalc } from "./hashCalc.js";
@@ -77,6 +77,29 @@ export default class Variable implements VariableInput {
         PM_VERSION_MAJOR: (v: VariableInput) => resolvePMVersionComponent(v, "major"),
         PM_VERSION_MINOR: (v: VariableInput) => resolvePMVersionComponent(v, "minor"),
         PM_VERSION_PATCH: (v: VariableInput) => resolvePMVersionComponent(v, "patch"),
+
+        // ── Deprecated: NPM_* → PM_* (backward compatibility) ──
+        // These variables were renamed to PM_VERSION / PM_VERSION_MAJOR / etc.
+        // for multi-package-manager support (npm / pnpm / yarn).
+        // Resolvers delegate to the canonical PM_* names; core.warning is
+        // emitted on first use. The Variable cache ensures the warning
+        // fires at most once per variable per run.
+        NPM_VERSION: async (v: VariableInput) => {
+            warning('"{NPM_VERSION}" is deprecated, use "{PM_VERSION}" instead.');
+            return v.get("PM_VERSION");
+        },
+        NPM_VERSION_MAJOR: async (v: VariableInput) => {
+            warning('"{NPM_VERSION_MAJOR}" is deprecated, use "{PM_VERSION_MAJOR}" instead.');
+            return v.get("PM_VERSION_MAJOR");
+        },
+        NPM_VERSION_MINOR: async (v: VariableInput) => {
+            warning('"{NPM_VERSION_MINOR}" is deprecated, use "{PM_VERSION_MINOR}" instead.');
+            return v.get("PM_VERSION_MINOR");
+        },
+        NPM_VERSION_PATCH: async (v: VariableInput) => {
+            warning('"{NPM_VERSION_PATCH}" is deprecated, use "{PM_VERSION_PATCH}" instead.');
+            return v.get("PM_VERSION_PATCH");
+        },
 
         // ── Lockfile hash / git ──
         LOCKFILE_HASH_SHA2_256: (v: VariableInput) => hashCalc(v.lockfilePath, "SHA2_256"),

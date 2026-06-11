@@ -24,6 +24,7 @@ vi.mock("@actions/core", () => ({
     saveState: vi.fn((key: string, value: string) => { mockCoreStates[key] = value; }),
     setOutput: vi.fn((key: string, value: string) => { mockCoreOutputs[key] = value; }),
     debug: vi.fn(),
+    warning: vi.fn(),
     startGroup: vi.fn(),
     endGroup: vi.fn(),
     info: vi.fn(),

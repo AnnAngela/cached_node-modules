@@ -125,7 +125,7 @@ You can use these magic variables in the `cacheKey` to generate different cache 
 
 * `{PM_VERSION}`:
 
-  Description: The package manager version, usually without `v` prefix
+  Description: The package manager version, usually without `v` prefix. (Legacy names `{NPM_VERSION}`, `{NPM_VERSION_MAJOR}`, etc. are still supported but deprecated — prefer `{PM_*}`.)
 
   Example: `10.2.3`
 

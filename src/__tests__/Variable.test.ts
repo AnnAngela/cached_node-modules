@@ -33,6 +33,7 @@ vi.mock("../Octokit.js", () => {
 
 vi.mock("@actions/core", () => ({
     debug: vi.fn(),
+    warning: vi.fn(),
 }));
 
 import spawnChildProcess from "../spawnChildProcess.js";
@@ -42,6 +43,8 @@ import octokit from "../Octokit.js";
 const mockSpawn = spawnChildProcess as ReturnType<typeof vi.fn>;
 const mockHashCalc = hashCalc as ReturnType<typeof vi.fn>;
 const mockListCommits = octokit.repos.listCommits as unknown as ReturnType<typeof vi.fn>;
+// Retrieve the mocked warning function from @actions/core for assertions
+const mockWarning = (await import("@actions/core")).warning as ReturnType<typeof vi.fn>;
 
 // We'll import Variable after setting up mocks
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -470,6 +473,64 @@ describe("Variable", () => {
             const second = await v.get("PM_VERSION_PATCH");
             expect(first).toBe("0");
             expect(second).toBe("0");
+        });
+    });
+
+    describe("deprecated NPM_* aliases", () => {
+        it("NPM_VERSION resolves to same value as PM_VERSION", async () => {
+            mockSpawn.mockImplementation((cmd: string) => {
+                if (cmd === "npm --version") {
+                    return Promise.resolve("10.2.3");
+                }
+                return Promise.resolve("");
+            });
+            const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "npm");
+            const pmVersion = await v.get("PM_VERSION");
+            const npmVersion = await v.get("NPM_VERSION");
+            expect(npmVersion).toBe(pmVersion);
+            // Should emit a deprecation warning
+            expect(mockWarning).toHaveBeenCalledWith(
+                expect.stringContaining('"{NPM_VERSION}" is deprecated'),
+            );
+        });
+
+        it("NPM_VERSION_MAJOR/MINOR/PATCH resolve correctly", async () => {
+            mockSpawn.mockImplementation((cmd: string) => {
+                if (cmd === "npm --version") {
+                    return Promise.resolve("10.2.3");
+                }
+                return Promise.resolve("");
+            });
+            const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "npm");
+            expect(await v.get("NPM_VERSION_MAJOR")).toBe("10");
+            expect(await v.get("NPM_VERSION_MINOR")).toBe("2");
+            expect(await v.get("NPM_VERSION_PATCH")).toBe("3");
+        });
+
+        it("deprecated vars are recognized by isVariableName", () => {
+            expect(Variable.isVariableName("NPM_VERSION")).toBe(true);
+            expect(Variable.isVariableName("NPM_VERSION_MAJOR")).toBe(true);
+            expect(Variable.isVariableName("NPM_VERSION_MINOR")).toBe(true);
+            expect(Variable.isVariableName("NPM_VERSION_PATCH")).toBe(true);
+        });
+
+        it("deprecated vars fire warning only once per variable due to cache", async () => {
+            mockSpawn.mockImplementation((cmd: string) => {
+                if (cmd === "npm --version") {
+                    return Promise.resolve("10.2.3");
+                }
+                return Promise.resolve("");
+            });
+            const v = new Variable("/cwd", "/cwd/lock", "/cwd/pkg.json", "", "npm");
+            // First call — warning fires via resolver
+            await v.get("NPM_VERSION");
+            // Second call — cache hit, resolver not re-executed
+            await v.get("NPM_VERSION");
+            // warning should have been called exactly once
+            const npmWarnings = mockWarning.mock.calls.filter(
+                (call: string[]) => call[0]?.includes("{NPM_VERSION}"),
+            );
+            expect(npmWarnings.length).toBe(1);
         });
     });
 });

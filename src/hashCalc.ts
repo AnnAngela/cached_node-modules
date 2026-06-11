@@ -19,26 +19,36 @@ export const algorithmMap = {
 /**
  * Determine whether a yarn.lock file is Yarn Classic v1 or Yarn Berry (v2+).
  *
- * Classic: begins with header comment "# yarn lockfile v1"
+ * Classic: first line is exactly "# yarn lockfile v1"
  * Berry:   valid YAML with top-level "__metadata" key
  *
- * Returns the handler to use.
+ * Returns the handler to use, or undefined if the file is not a recognized
+ * lockfile format (falls back to raw stream hash).
  */
 const detectYarnHandler = async (filePath: string, parsedPath: path.ParsedPath) => {
     // Read the file once so the handler doesn't need to re-read it.
     const content = await fs.promises.readFile(filePath, "utf-8");
-    if (content.includes("# yarn lockfile v1")) {
+    // Yarn Classic v1 lockfiles always begin with "# yarn lockfile v1" on the
+    // first line. Use first-line exact match rather than substring search to
+    // avoid misclassifying Berry lockfiles that may contain this text as a
+    // literal value elsewhere in the file.
+    if (content.split(/\r?\n/)[0].trim() === "# yarn lockfile v1") {
         // Yarn Classic — pass pre-read content to avoid a second read inside prepare()
         return yarnClassicLockHandler(filePath, parsedPath, content);
     }
-    // Attempt YAML parse to check for __metadata (Yarn Berry indicator)
+    // Attempt YAML parse to check for __metadata (Yarn Berry indicator).
+    // Only YAML.parse errors are caught here — handler invocation is outside
+    // the try block so that mkdtemp / I/O errors propagate rather than
+    // silently fallback to a raw stream hash that includes __metadata.
+    let isBerry = false;
     try {
         const parsed = YAML.parse(content) as unknown;
-        if (parsed && typeof parsed === "object" && Reflect.has(parsed, "__metadata")) {
-            return await yarnBerryLockHandler(filePath, parsedPath, content);
-        }
+        isBerry = parsed && typeof parsed === "object" && Reflect.has(parsed, "__metadata");
     } catch {
         // If YAML parse fails, fall through to raw hash
+    }
+    if (isBerry) {
+        return await yarnBerryLockHandler(filePath, parsedPath, content);
     }
     // Not a recognized lockfile format — stream-hash raw content
     return undefined;

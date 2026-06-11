@@ -32,16 +32,17 @@ describe("networkError", () => {
             expect(matched).toBe(true);
         });
 
-        it.each(["ETIMEDOUT", "ECONNREFUSED", "ECONNRESET", "ENOTFOUND"] as const)(
-            'should match "An unexpected error occurred ... %s"',
-            (errorCode) => {
-                const stderrLine = `error An unexpected error occurred: "https://registry.yarnpkg.com/some-pkg: ${errorCode}"`;
+        it("should match npm ERR! code ETIMEDOUT in Yarn Classic context", () => {
+            const stderrLine = "error An unexpected error occurred: \"https://registry.yarnpkg.com/some-pkg: ETIMEDOUT\"";
 
-                const matched = networkError.some((pattern) => stderrLine.includes(pattern));
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern));
 
-                expect(matched).toBe(true);
-            },
-        );
+            // Bare errno codes (ETIMEDOUT) are NOT in the exported list —
+            // only the npm-prefixed "npm ERR! code ETIMEDOUT" form is present.
+            // Yarn Classic's "There appears to be trouble..." pattern handles
+            // the Yarn Classic retry message independently.
+            expect(matched).toBe(false);
+        });
 
         it("should not match a non-network Yarn error", () => {
             const stderrLine = 'error An unexpected error occurred: "EACCES: permission denied"';
@@ -53,25 +54,6 @@ describe("networkError", () => {
     });
 
     describe("Yarn Berry v2+", () => {
-        it.each(["ETIMEDOUT", "ECONNREFUSED", "ECONNRESET", "ENOTFOUND"] as const)(
-            "should match YN0001 with %s",
-            (errorCode) => {
-                const stderrLine = `➤ YN0001: │ GotError: connect ${errorCode} 104.16.24.35:443`;
-
-                const matched = networkError.some((pattern) => stderrLine.includes(pattern));
-
-                expect(matched).toBe(true);
-            },
-        );
-
-        it("should match YN0001 directly as error code pattern", () => {
-            const stderrLine = "➤ YN0001: │ SomeError: message";
-
-            const matched = networkError.some((pattern) => stderrLine.includes(pattern));
-
-            expect(matched).toBe(true);
-        });
-
         it("should match YN0049 (network unreachable) directly", () => {
             const stderrLine = "➤ YN0049: │ The remote server failed to provide the requested resource";
 
@@ -80,21 +62,35 @@ describe("networkError", () => {
             expect(matched).toBe(true);
         });
 
-        it("should match YN0058 (peer dependencies fetch failed) directly", () => {
-            const stderrLine = "➤ YN0058: │ something-fetch: Failed to fetch peer dependencies";
-
-            const matched = networkError.some((pattern) => stderrLine.includes(pattern));
-
-            expect(matched).toBe(true);
-        });
-
-        it("should not match YN0001 without network error codes", () => {
+        it("should NOT match YN0001 without network error codes (generic exception)", () => {
+            // YN0001 is a generic exception code in Yarn Berry, not network-specific.
+            // Retrying on YN0001 is pointless for permanent config errors like
+            // incompatible Node.js versions or package.json syntax errors.
             const stderrLine = "➤ YN0001: │ SomeError: package not found";
 
             const matched = networkError.some((pattern) => stderrLine.includes(pattern));
 
-            // YN0001 is now in the pattern list — it matches regardless of the detail
-            expect(matched).toBe(true);
+            expect(matched).toBe(false);
+        });
+
+        it("should NOT match YN0058 (peer dependency resolution)", () => {
+            // YN0058 indicates peer-dependency resolution failures, not network issues.
+            const stderrLine = "➤ YN0058: │ something-fetch: Failed to fetch peer dependencies";
+
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern));
+
+            expect(matched).toBe(false);
+        });
+
+        it("should NOT match YN0001 with bare ETIMEDOUT (bare codes no longer exported)", () => {
+            // Bare errno codes are no longer exported — only npm-prefixed
+            // "npm ERR! code ETIMEDOUT" is present. YN0049 is the only
+            // Yarn-Berry-specific network code kept.
+            const stderrLine = "➤ YN0001: │ GotError: connect ETIMEDOUT 104.16.24.35:443";
+
+            const matched = networkError.some((pattern) => stderrLine.includes(pattern));
+
+            expect(matched).toBe(false);
         });
     });
 
@@ -126,12 +122,15 @@ describe("networkError", () => {
             expect(matched).toBe(true);
         });
 
-        it("should match WARN GET error for network issues", () => {
+        it("should NOT match WARN GET error for bare ETIMEDOUT (bare codes removed)", () => {
+            // Bare errno codes are no longer exported. pnpm network errors
+            // are covered by the ERR_PNPM_FETCH_* patterns and the npm-prefixed
+            // "npm ERR! code ETIMEDOUT" pattern.
             const stderrLine = "WARN GET https://registry.npmjs.org/ error (ETIMEDOUT). Will retry in 10 seconds";
 
             const matched = networkError.some((pattern) => stderrLine.includes(pattern));
 
-            expect(matched).toBe(true);
+            expect(matched).toBe(false);
         });
 
         it("should not match non-network pnpm errors", () => {

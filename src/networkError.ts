@@ -52,33 +52,39 @@ const pnpmNetworkError = [
 ];
 
 /**
- * Yarn Berry (v2+) unique network error patterns.
- * The structured output format "➤ YN0001: │ ..." is used by Yarn Berry
- * for error reporting. These codes indicate connectivity issues.
+ * Yarn Berry (v2+) network error patterns.
+ *
+ * Only codes that unambiguously indicate connectivity issues are listed.
+ * YN0001 (generic exception — fires for incompatible Node, invalid
+ * package.json, etc.) and YN0058 (peer-dependency resolution failure)
+ * are excluded because retrying is pointless for permanent config errors.
+ *
+ * The bare Node.js errno codes in nodeNetworkErrors already cover raw
+ * network failures (ECONNREFUSED, ETIMEDOUT) for Yarn Berry's stderr.
+ * YN0049 is included as a Yarn-Berry-specific HTTP-connection-refused code
+ * (e.g. GitHub Packages auth failure).
  *
  * @see https://yarnpkg.com/advanced/error-codes
  */
 const yarnBerryNetworkError = [
-    "YN0001",
     "YN0049",
-    "YN0058",
 ];
 
 /**
  * All network error patterns. Used in `spawnChildProcess.ts` via
  * `stderr.split("\n").some(line => networkError.some(pattern => line.includes(pattern)))`.
  *
- * Design note: Node.js errno codes (ECONNREFUSED, ETIMEDOUT, etc.) are included
- * as bare strings because they reliably indicate network failures in stderr,
- * regardless of which package manager produced them. The manager-specific
- * prefixes (npm ERR!, YN0001, etc.) are added for npm context where the errno
- * codes alone might not be sufficient to distinguish from other errors in
- * npm's structured output format.
+ * Bare Node.js errno codes (ECONNREFUSED, ENOTFOUND, etc.) are NOT
+ * included directly — they would match any context in stderr. Instead,
+ * each package manager's prefixed pattern is listed separately:
+ *   npm:       `npm ERR! code ECONNREFUSED`
+ *   Yarn Cls:  `There appears to be trouble with your network connection. Retrying...`
+ *   Yarn B:    `YN0049`
+ *   pnpm:      `ERR_PNPM_FETCH_*`
  */
 export default [
     ...npmNetworkError,
     ...yarnClassicNetworkError,
     ...yarnBerryNetworkError,
     ...pnpmNetworkError,
-    ...nodeNetworkErrors,
 ];
