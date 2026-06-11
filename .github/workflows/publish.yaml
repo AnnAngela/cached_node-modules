@@ -99,6 +99,14 @@ jobs:
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           npm run package
+      - name: Verify build output
+        if: steps.testIfExist.outputs.EXIST == 'false'
+        run: |
+          node --check ./dist/index.js && echo "dist/index.js is valid JavaScript."
+          node --check ./dist/post.js && echo "dist/post.js is valid JavaScript."
+      - name: Commit package
+        if: steps.testIfExist.outputs.EXIST == 'false'
+        run: |
           git add .
           git commit -am "feat: package ${{ steps.tag.outputs.TAG }}"
       - name: Delete old major tag
