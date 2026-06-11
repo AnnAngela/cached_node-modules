@@ -33,10 +33,10 @@ if (tagList.includes(tag)) {
 
 console.log(`tag: ${tag}`);
 
-console.log("Bump the package version...");
-await execCommand(`npm version ${tag.replace(/^v/, "")} --no-git-tag-version`, { synchronousStderr: true, synchronousStdout: true });
-await execCommand("git add package-lock.json package.json", { synchronousStderr: true, synchronousStdout: true });
-await execCommand(`git commit -S -m "release: ${tag}" -- package-lock.json package.json`, { synchronousStderr: true, synchronousStdout: true });
+console.log("Bump the package version and create tag...");
+// npm version will: bump version in files → create commit (GPG-signed via global sign-git-commit + git commit.gpgsign)
+// → create annotated tag (GPG-signed via --sign-git-tag)
+await execCommand(`npm version ${tag.replace(/^v/, "")} -m "release: %s" --sign-git-tag`, { synchronousStderr: true, synchronousStdout: true });
 
 console.log("Pushing...");
 await execCommand("git push --follow-tags", { synchronousStderr: true, synchronousStdout: true });
