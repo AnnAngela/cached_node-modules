@@ -28,6 +28,11 @@ export default async (options: mkdtmpOptions = {}) => {
     const baseDir = local ? ".tmp" : process.env.RUNNER_TEMP ?? tmpdir();
 
     if (random) {
+        // mkdtemp requires the parent directory to exist beforehand (unlike
+        // mkdir with { recursive: true }). Ensure baseDir is created so that
+        // mkdtemp works reliably — even when local: true (baseDir ".tmp")
+        // or RUNNER_TEMP points to a non-existent directory.
+        await fs.promises.mkdir(baseDir, { recursive: true, mode: 0o700 });
         // Use mkdtemp for atomic directory creation. The trailing X's are
         // replaced by the OS with random characters, eliminating the TOCTOU
         // window between name generation and mkdir that randomUUID() + mkdir
@@ -46,6 +51,6 @@ export default async (options: mkdtmpOptions = {}) => {
         : "cached_node-modules@tmpdir";
     const tempPath = join(baseDir, subDir);
     console.log("tempPath:", tempPath);
-    await fs.promises.mkdir(tempPath, { recursive: true });
+    await fs.promises.mkdir(tempPath, { recursive: true, mode: 0o700 });
     return tempPath;
 };

@@ -55,6 +55,28 @@ describe("mkdtmp", () => {
             expect(stat.isDirectory()).toBe(true);
         });
 
+        it("should create the baseDir automatically when using local: true and .tmp does not exist", async () => {
+            // .tmp is NOT pre-created — mkdtmp should create it via
+            // mkdir(recursive: true, mode: 0o700) before calling mkdtemp.
+            // This verifies the ENOENT fix: mkdtemp requires the parent
+            // directory to exist beforehand.
+            const result = await mkdtmp({ local: true });
+
+            expect(result).toMatch(/^\.tmp\/cached_node-modules@[A-Za-z0-9]+$/);
+            const stat = await memfs.promises.stat(result);
+            expect(stat.isDirectory()).toBe(true);
+        });
+
+        it("should create the baseDir automatically when RUNNER_TEMP points to a non-existent directory", async () => {
+            vi.stubEnv("RUNNER_TEMP", "/nonexistent/runner/temp");
+
+            const result = await mkdtmp();
+
+            expect(result).toMatch(/^\/nonexistent\/runner\/temp\/cached_node-modules@[A-Za-z0-9]+$/);
+            const stat = await memfs.promises.stat(result);
+            expect(stat.isDirectory()).toBe(true);
+        });
+
         it("should use mkdtemp with custom subDir", async () => {
             const result = await mkdtmp({ subDir: "custom-dir" });
 
@@ -91,13 +113,16 @@ describe("mkdtmp", () => {
             expect(stat.isDirectory()).toBe(true);
         });
 
-        it("should call mkdir with recursive: true", async () => {
+        it("should call mkdir with mode: 0o700 when creating baseDir via mkdtemp path", async () => {
             const mkdirSpy = vi.spyOn(memfs.promises, "mkdir");
 
-            await mkdtmp({ random: false });
+            await mkdtmp({ local: true });
 
-            expect(mkdirSpy).toHaveBeenCalledWith("/tmp/cached_node-modules@tmpdir", {
+            // mkdtmp creates baseDir (.tmp) before calling mkdtemp.
+            // Verify the mkdir call includes restrictive permissions.
+            expect(mkdirSpy).toHaveBeenCalledWith(".tmp", {
                 recursive: true,
+                mode: 0o700,
             });
         });
     });

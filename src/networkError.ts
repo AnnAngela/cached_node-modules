@@ -66,7 +66,7 @@ const yarnBerryNetworkError = [
 
 /**
  * All network error patterns. Used in `spawnChildProcess.ts` via
- * `networkError.some((pattern) => stderr.includes(pattern))`.
+ * `stderr.split("\n").some(line => networkError.some(pattern => line.includes(pattern)))`.
  *
  * Design note: Node.js errno codes (ECONNREFUSED, ETIMEDOUT, etc.) are included
  * as bare strings because they reliably indicate network failures in stderr,
