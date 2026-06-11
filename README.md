@@ -2,6 +2,8 @@
 
 Caching for node_modules to save time, especially in Github-hosted Windows runner or other poor performance runner.
 
+> **📦 从 v5 升级到 v6？** 请阅读 [MIGRATION-v6.md](MIGRATION-v6.md) 了解分步骤迁移指引。
+
 ## Usage
 
 ### input
