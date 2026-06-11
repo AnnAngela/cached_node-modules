@@ -5,12 +5,16 @@
     ],
     "compilerOptions": {
         "outDir": "./dist",
-        "rootDir": "./src",
+        "rootDir": ".",
         "declaration": false,
         "declarationMap": false,
+        "types": [
+            "vitest/globals",
+        ],
     },
     "include": [
         "src",
+        "vitest.config.ts",
     ],
     "$schema": "https://json.schemastore.org/tsconfig",
 }

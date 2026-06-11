@@ -16,7 +16,7 @@
         "lint:check-ci": "eslint --exit-on-fatal-error -f ./node_modules/@annangela/eslint-formatter-gha/dist/index.js --max-warnings 0 .",
         "lint:write": "eslint --fix .",
         "package": "bash scripts/package.sh",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "vitest run --coverage",
         "ci": "export RANDOM_UUID=$(uuidgen) && rm -rdf node_modules && node scripts/ci/before.js && npm ci && node scripts/ci/after.js",
         "tag": "node scripts/newTag.js"
     },
@@ -44,10 +44,13 @@
         "@types/node": "^25.9.2",
         "@types/semver": "^7.7.1",
         "@types/shell-quote": "^1.7.5",
+        "@vitest/coverage-v8": "^4.1.8",
         "esbuild": "^0.28.0",
         "eslint": "^10.4.1",
+        "memfs": "^4.57.6",
         "simple-git": "^3.36.0",
-        "typescript": "^6.0.3"
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.8"
     },
     "dependencies": {
         "@actions/cache": "^6.0.1",
@@ -57,6 +60,7 @@
         "@octokit/plugin-retry": "^8.1.0",
         "@octokit/rest": "^22.0.1",
         "semver": "^7.8.3",
-        "shell-quote": "^1.8.4"
+        "shell-quote": "^1.8.4",
+        "yaml": "^2.9.0"
     }
 }

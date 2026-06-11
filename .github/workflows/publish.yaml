@@ -15,24 +15,14 @@ env:
   GHA_BOT_GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
 
 permissions:
-  actions: write
-  checks: read
   contents: write
-  deployments: read
-  issues: write
-  discussions: read
-  packages: read
-  pages: read
-  pull-requests: read
-  repository-projects: read
-  security-events: write
-  statuses: write
+  actions: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           show-progress: false
 
@@ -53,7 +43,7 @@ jobs:
 
       - name: Use Node.js
         if: steps.testIfExist.outputs.EXIST == 'false'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: lts/*
           check-latest: true
@@ -99,6 +89,14 @@ jobs:
         if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           npm run package
+      - name: Verify build output
+        if: steps.testIfExist.outputs.EXIST == 'false'
+        run: |
+          node --check ./dist/index.js && echo "dist/index.js is valid JavaScript."
+          node --check ./dist/post.js && echo "dist/post.js is valid JavaScript."
+      - name: Commit package
+        if: steps.testIfExist.outputs.EXIST == 'false'
+        run: |
           git add .
           git commit -am "feat: package ${{ steps.tag.outputs.TAG }}"
       - name: Delete old major tag

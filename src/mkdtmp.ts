@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,8 +9,10 @@ export interface mkdtmpOptions {
      */
     local?: boolean;
     /**
-     * If `true`, the directory may not be empty.
-     * @default false
+     * If `true`, use {@link fs.promises.mkdtemp} to create a unique
+     * directory atomically. If `false`, create a deterministic directory
+     * with a fixed name via {@link fs.promises.mkdir}.
+     * @default true
      */
     random?: boolean;
     /**
@@ -24,11 +25,32 @@ export interface mkdtmpOptions {
 export default async (options: mkdtmpOptions = {}) => {
     const local = typeof options.local === "boolean" ? options.local : false;
     const random = typeof options.random === "boolean" ? options.random : true;
-    const subDir = typeof options.subDir === "string" ? options.subDir : `cached_node-modules@${random ? randomUUID() : "tmpdir"}`;
-    const tempPath = join(local ? ".tmp" : process.env.RUNNER_TEMP ?? tmpdir(), subDir);
+    const baseDir = local ? ".tmp" : process.env.RUNNER_TEMP ?? tmpdir();
+
+    if (random) {
+        // mkdtemp requires the parent directory to exist beforehand (unlike
+        // mkdir with { recursive: true }). Ensure baseDir is created so that
+        // mkdtemp works reliably — even when local: true (baseDir ".tmp")
+        // or RUNNER_TEMP points to a non-existent directory.
+        await fs.promises.mkdir(baseDir, { recursive: true, mode: 0o700 });
+        // Use mkdtemp for atomic directory creation. The trailing X's are
+        // replaced by the OS with random characters, eliminating the TOCTOU
+        // window between name generation and mkdir that randomUUID() + mkdir
+        // would have (CodeQL js/insecure-temporary-file).
+        const prefix = typeof options.subDir === "string"
+            ? `${join(baseDir, options.subDir)}@XXXXXX`
+            : join(baseDir, "cached_node-modules@XXXXXX");
+        const tempPath = await fs.promises.mkdtemp(prefix);
+        console.log("tempPath:", tempPath);
+        return tempPath;
+    }
+
+    // Deterministic directory name — no randomness, no mkdtemp.
+    const subDir = typeof options.subDir === "string"
+        ? options.subDir
+        : "cached_node-modules@tmpdir";
+    const tempPath = join(baseDir, subDir);
     console.log("tempPath:", tempPath);
-    await fs.promises.mkdir(tempPath, {
-        recursive: true,
-    });
+    await fs.promises.mkdir(tempPath, { recursive: true, mode: 0o700 });
     return tempPath;
 };

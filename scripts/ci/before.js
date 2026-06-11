@@ -12,6 +12,7 @@ const registries = [
     "https://registry.npmjs.org/",
     "https://mirrors.cloud.tencent.com/npm/",
     "https://registry.npmmirror.com/",
+    "https://mirrors.tencentyun.com/npm/",
 ];
 const targetPath = "index.json";
 const latency = await testLatency(registries.map((base) => `${base}${targetPath}`));

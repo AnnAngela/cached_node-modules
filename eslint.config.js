@@ -4,6 +4,7 @@ import { configs } from "@annangela/eslint-config";
  */
 const ignores = [
     "**/dist/**",
+    "**/coverage/**",
     "**/.*/**",
     "node_modules",
 ];
@@ -18,6 +19,14 @@ nodeConfig.rules["n/no-unsupported-features/node-builtins"] = ["error", {
  * @type { import("eslint").Linter.Config[] }
  */
 const config = [
+    // Global ignores — matches ESLint flat config semantics
+    {
+        ignores: [
+            "**/dist/**",
+            "coverage/",
+            "**/coverage/",
+        ],
+    },
     // base
     {
         ...configs.base,
@@ -67,6 +76,27 @@ const config = [
                     allow: [
                         "per_page",
                     ],
+                },
+            ],
+        },
+    },
+    // Test files: relax rules that conflict with vitest patterns
+    {
+        files: [
+            "**/__tests__/**",
+        ],
+        rules: {
+            // vitest mockImplementation and execFile inherently use callbacks
+            "promise/prefer-await-to-callbacks": "off",
+            // async in beforeEach/describe is standard vitest pattern,
+            // but only disable checksVoidReturn.arguments to still catch
+            // real Promise misuse like conditionals on Promises
+            "@typescript-eslint/no-misused-promises": [
+                "error",
+                {
+                    checksVoidReturn: {
+                        arguments: false,
+                    },
                 },
             ],
         },

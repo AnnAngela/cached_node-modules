@@ -1,8 +1,7 @@
 import { isFeatureAvailable, restoreCache, saveCache } from "@actions/cache";
-import { debug, endGroup, getInput, saveState, setOutput, startGroup } from "@actions/core";
+import { debug, endGroup, getInput, saveState, setOutput, startGroup, warning } from "@actions/core";
 import fs from "node:fs";
 import path from "node:path";
-import timersPromises from "node:timers/promises";
 import Variable from "./Variable.js";
 import spawnChildProcess from "./spawnChildProcess.js";
 
@@ -13,18 +12,38 @@ if (!isFeatureAvailable()) {
 }
 
 console.info("Parsing input...");
+
+const rawPackageManager = getInput("packageManager") || "npm";
+// Validate packageManager — must be one of the supported values.
+const VALID_PACKAGE_MANAGERS = ["npm", "pnpm", "yarn"] as const;
+type SupportedPM = typeof VALID_PACKAGE_MANAGERS[number];
+if (!(VALID_PACKAGE_MANAGERS as readonly string[]).includes(rawPackageManager)) {
+    throw new Error(`Invalid packageManager "${rawPackageManager}". Must be one of: ${VALID_PACKAGE_MANAGERS.join(", ")}`);
+}
+// Narrow to the union type — the validation above guarantees this is safe.
+const packageManager: SupportedPM = rawPackageManager as SupportedPM;
+
+// Map package manager to default lockfile path and install command.
+// Users can override these via explicit lockfilePath / command inputs.
+const PM_DEFAULTS: Record<SupportedPM, { lockfilePath: string; command: string }> = {
+    npm: { lockfilePath: "package-lock.json", command: "npm ci" },
+    pnpm: { lockfilePath: "pnpm-lock.yaml", command: "pnpm install --frozen-lockfile" },
+    yarn: { lockfilePath: "yarn.lock", command: "yarn install --frozen-lockfile" },
+};
+
 const inputs = {
     cacheKey: getInput("cacheKey"),
     customVariable: getInput("customVariable"),
-    command: getInput("command"),
+    command: getInput("command") || PM_DEFAULTS[packageManager].command,
     cwd: getInput("cwd"),
-    lockfilePath: getInput("lockfilePath"),
+    lockfilePath: getInput("lockfilePath") || PM_DEFAULTS[packageManager].lockfilePath,
     packageJsonPath: getInput("packageJsonPath"),
     networkErrorRetryTime: getInput("networkErrorRetryTime"),
 };
-inputs.networkErrorRetryTime = /^d+$/.test(inputs.networkErrorRetryTime) ? inputs.networkErrorRetryTime : "3";
+inputs.networkErrorRetryTime = /^\d+$/.test(inputs.networkErrorRetryTime) ? inputs.networkErrorRetryTime : "3";
 
 debug(`inputs: ${JSON.stringify(inputs)}`);
+debug(`packageManager: ${packageManager}`);
 
 const lockfilePath = path.join(inputs.cwd, inputs.lockfilePath);
 const packageJsonPath = path.join(inputs.cwd, inputs.packageJsonPath);
@@ -52,23 +71,34 @@ try {
     });
 }
 
-const variable = new Variable(inputs.cwd, lockfilePath, packageJsonPath, inputs.customVariable);
+const variable = new Variable(inputs.cwd, lockfilePath, packageJsonPath, inputs.customVariable, packageManager);
 
 console.info("Replacing variables...");
-const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g))];
-debug(`[replacingVariables] matched variableNames (after removing duplicate variables): ${JSON.stringify(variableNames)}`);
+const variableNames = [...new Set(inputs.cacheKey.match(/\{([A-Z_\d]+)\}/g) ?? [])];
+// Sort by length descending to prevent substring collisions:
+// e.g. {PM_VERSION_MAJOR} (longer) is replaced before {PM} (shorter),
+// so {PM} replacement doesn't corrupt {PM_VERSION_MAJOR}.
+variableNames.sort((a, b) => b.length - a.length);
+debug(`[replacingVariables] matched variableNames (after removing duplicate variables and sorting): ${JSON.stringify(variableNames)}`);
 let cacheKey = inputs.cacheKey;
 debug(`[replacingVariables] [start] cacheKey: ${cacheKey}`);
 for (const variableName of variableNames) {
     debug(`[replacingVariables] \tRun on variableName: ${variableName}`);
     const trimmedVariableName = trimBrackets(variableName);
     debug(`[replacingVariables] \t\ttrimmedVariableName: ${trimmedVariableName}`);
-    if (trimmedVariableName === "CUSTOM_VARIABLE" || Reflect.has(Variable.VARIABLE_MAP, trimmedVariableName)) {
+    if (Variable.isVariableName(trimmedVariableName)) {
         debug(`[replacingVariables] \t\tVariable "${trimmedVariableName}" is in the list.`);
-        const variableValue = await variable.get(trimmedVariableName as "CUSTOM_VARIABLE" | keyof typeof Variable.VARIABLE_MAP);
+        const variableValue = await variable.get(trimmedVariableName);
         debug(`[replacingVariables] \t\tvariableValue: ${variableValue}`);
         cacheKey = cacheKey.replaceAll(variableName, variableValue);
         debug(`[replacingVariables] \t\tnew cacheKey: ${cacheKey}`);
+    } else {
+        // Variable name not recognized — the literal will stay in the
+        // cacheKey as-is, causing cache-miss forever. Warn the user so
+        // they can fix typos or migrate deprecated names.
+        warning(
+            `Unknown variable "${variableName}" in cacheKey — it will be left as-is. Check for typos or see README for available magic variables.`,
+        );
     }
 }
 cacheKey = cacheKey.trim();
@@ -81,7 +111,14 @@ const restoreCacheResult = await restoreCache([nodeModulesPath], cacheKey, undef
     timeoutInMs: 1000 * 60 * 5,
     segmentTimeoutInMs: 1000 * 60 * 5,
 }, false);
-await timersPromises.setTimeout(100);
+// Drain process.stdout — restoreCache may have internally written
+// debug/info messages to stdout that are still buffered. Without this
+// drain, process.exit() can cut them off.
+await new Promise<void>((resolve) => {
+    process.stdout.write("", () => {
+        resolve();
+    });
+});
 debug(`restoreCacheResult: ${restoreCacheResult ?? "(undefined)"}`);
 endGroup();
 
@@ -116,4 +153,13 @@ const cacheHit = restoreCacheResult === cacheKey;
 console.info("\tcache-hit:", cacheHit);
 setOutput("cache-hit", cacheHit);
 console.info("Outputs set, exit.");
-await timersPromises.setTimeout(3000);
+// Drain process.stdout before exiting to ensure all buffered
+// ::debug::, ::group:: workflow commands and stdout-piped child
+// process output have been flushed to the GitHub Actions runner.
+// Without this drain, process.exit() can truncate buffered output
+// causing lost workflow logs and intermittent ::set-output failures.
+await new Promise<void>((resolve) => {
+    process.stdout.write("", () => {
+        resolve();
+    });
+});

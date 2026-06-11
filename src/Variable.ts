@@ -1,33 +1,8 @@
-import { debug } from "@actions/core";
+import { debug, warning } from "@actions/core";
 import semver from "semver";
 import spawnChildProcess from "./spawnChildProcess.js";
 import { hashCalc } from "./hashCalc.js";
 import octokit from "./Octokit.js";
-
-interface variableMap {
-    OS_NAME: string;
-    NODE_ARCH: string;
-    NODE_VERSION: string;
-    NODE_VERSION_MAJOR: string;
-    NODE_VERSION_MINOR: string;
-    NODE_VERSION_PATCH: string;
-    NPM_VERSION: string;
-    NPM_VERSION_MAJOR: string;
-    NPM_VERSION_MINOR: string;
-    NPM_VERSION_PATCH: string;
-    LOCKFILE_GIT_COMMIT_LONG: string;
-    LOCKFILE_GIT_COMMIT_SHORT: string;
-    LOCKFILE_HASH_SHA2_256: string;
-    LOCKFILE_HASH_SHA2_512: string;
-    LOCKFILE_HASH_SHA3_256: string;
-    LOCKFILE_HASH_SHA3_512: string;
-    PACKAGEJSON_GIT_COMMIT_LONG: string;
-    PACKAGEJSON_GIT_COMMIT_SHORT: string;
-    PACKAGEJSON_HASH_SHA2_256: string;
-    PACKAGEJSON_HASH_SHA2_512: string;
-    PACKAGEJSON_HASH_SHA3_256: string;
-    PACKAGEJSON_HASH_SHA3_512: string;
-}
 
 const fetchFileGitCommitLong = async (filePath: string) => {
     debug(`[fetchFileGitCommitLong] Fetching git commit long of ${filePath}...`);
@@ -44,81 +19,149 @@ const fetchFileGitCommitLong = async (filePath: string) => {
     return sha;
 };
 
-type variableFunction = (_input: string) => Promise<string>;
-export default class Variable {
-    static readonly VARIABLE_MAP: Readonly<Record<keyof variableMap, variableFunction>> = {
-        OS_NAME: (cwd) => spawnChildProcess("node --eval=\"console.info(process.platform)\"", { cwd }),
-        NODE_ARCH: (cwd) => spawnChildProcess("node --eval=\"console.info(process.arch)\"", { cwd }),
-        NODE_VERSION: (cwd) => spawnChildProcess("node --version", { cwd }),
-        NODE_VERSION_MAJOR: async (cwd) => `${semver.major(await Variable.VARIABLE_MAP.NODE_VERSION(cwd))}`,
-        NODE_VERSION_MINOR: async (cwd) => `${semver.minor(await Variable.VARIABLE_MAP.NODE_VERSION(cwd))}`,
-        NODE_VERSION_PATCH: async (cwd) => `${semver.patch(await Variable.VARIABLE_MAP.NODE_VERSION(cwd))}`,
-        NPM_VERSION: (cwd) => spawnChildProcess("npm --version", { cwd }),
-        NPM_VERSION_MAJOR: async (cwd) => `${semver.major(await Variable.VARIABLE_MAP.NPM_VERSION(cwd))}`,
-        NPM_VERSION_MINOR: async (cwd) => `${semver.minor(await Variable.VARIABLE_MAP.NPM_VERSION(cwd))}`,
-        NPM_VERSION_PATCH: async (cwd) => `${semver.patch(await Variable.VARIABLE_MAP.NPM_VERSION(cwd))}`,
-        LOCKFILE_GIT_COMMIT_LONG: fetchFileGitCommitLong,
-        LOCKFILE_GIT_COMMIT_SHORT: async (filePath) => (await fetchFileGitCommitLong(filePath)).slice(0, 7),
-        PACKAGEJSON_GIT_COMMIT_LONG: fetchFileGitCommitLong,
-        PACKAGEJSON_GIT_COMMIT_SHORT: async (filePath) => (await fetchFileGitCommitLong(filePath)).slice(0, 7),
-        LOCKFILE_HASH_SHA2_256: (filePath) => hashCalc(filePath, "SHA2_256"),
-        LOCKFILE_HASH_SHA2_512: (filePath) => hashCalc(filePath, "SHA2_512"),
-        LOCKFILE_HASH_SHA3_256: (filePath) => hashCalc(filePath, "SHA3_256"),
-        LOCKFILE_HASH_SHA3_512: (filePath) => hashCalc(filePath, "SHA3_512"),
-        PACKAGEJSON_HASH_SHA2_256: (filePath) => hashCalc(filePath, "SHA2_256"),
-        PACKAGEJSON_HASH_SHA2_512: (filePath) => hashCalc(filePath, "SHA2_512"),
-        PACKAGEJSON_HASH_SHA3_256: (filePath) => hashCalc(filePath, "SHA3_256"),
-        PACKAGEJSON_HASH_SHA3_512: (filePath) => hashCalc(filePath, "SHA3_512"),
-    };
-    private readonly cache: Partial<variableMap> = {};
+// Minimal interface describing what resolvers need from a Variable instance.
+// Decouples variableFunction from the Variable class so that the static
+// VARIABLE_MAP_BASE initializer doesn't form a self-referential type cycle.
+export interface VariableInput {
+    readonly cwd: string;
+    readonly lockfilePath: string;
+    readonly packageJsonPath: string;
+    readonly customVariable: string;
+    readonly packageManager: string;
+    get(name: string): Promise<string>;
+}
+
+type variableFunction = (variable: VariableInput) => Promise<string>;
+
+// Mapping from package manager to lockfile name (with extension).
+// Used by the {LOCKFILE} magic variable resolver.
+const PM_LOCKFILE_MAP: Record<string, string> = {
+    npm: "package-lock.json",
+    pnpm: "pnpm-lock.yaml",
+    yarn: "yarn.lock",
+};
+
+// Resolves PM_VERSION, parses it as semver, and returns the requested component.
+// Used by PM_VERSION_MAJOR/MINOR/PATCH resolvers — extracted as a module-level
+// function so it is available at VARIABLE_MAP_BASE initialization time.
+const resolvePMVersionComponent = async (v: VariableInput, component: "major" | "minor" | "patch"): Promise<string> => {
+    const version = await v.get("PM_VERSION");
+    const parsed = semver.parse(version);
+    if (!parsed) {
+        throw new Error(`Failed to parse "${v.packageManager}" version "${version}" as semver.`);
+    }
+    return `${parsed[component]}`;
+};
+
+export default class Variable implements VariableInput {
+    // All variable resolvers live in one map — no more special-cased if/else
+    // branches in get(). Adding a new variable only requires a new entry here.
+    // Uses `satisfies` to validate each resolver's type while preserving the
+    // exact object literal shape for VariableName's precise union type.
+    static readonly VARIABLE_MAP_BASE = {
+        // ── OS / Node ──
+        OS_NAME: (v: VariableInput) => spawnChildProcess("node --eval=\"console.info(process.platform)\"", { cwd: v.cwd }),
+        NODE_ARCH: (v: VariableInput) => spawnChildProcess("node --eval=\"console.info(process.arch)\"", { cwd: v.cwd }),
+        NODE_VERSION: (v: VariableInput) => spawnChildProcess("node --version", { cwd: v.cwd }),
+        NODE_VERSION_MAJOR: async (v: VariableInput) => `${semver.major(await v.get("NODE_VERSION"))}`,
+        NODE_VERSION_MINOR: async (v: VariableInput) => `${semver.minor(await v.get("NODE_VERSION"))}`,
+        NODE_VERSION_PATCH: async (v: VariableInput) => `${semver.patch(await v.get("NODE_VERSION"))}`,
+
+        // ── Package manager identity ──
+        CUSTOM_VARIABLE: (v: VariableInput) => Promise.resolve(v.customVariable),
+        PM: (v: VariableInput) => Promise.resolve(v.packageManager),
+        LOCKFILE: (v: VariableInput) => Promise.resolve(PM_LOCKFILE_MAP[v.packageManager] ?? "package-lock.json"),
+
+        // ── Package manager version ──
+        PM_VERSION: (v: VariableInput) => spawnChildProcess(`${v.packageManager} --version`, { cwd: v.cwd }),
+        PM_VERSION_MAJOR: (v: VariableInput) => resolvePMVersionComponent(v, "major"),
+        PM_VERSION_MINOR: (v: VariableInput) => resolvePMVersionComponent(v, "minor"),
+        PM_VERSION_PATCH: (v: VariableInput) => resolvePMVersionComponent(v, "patch"),
+
+        // ── Deprecated: NPM_* → PM_* (backward compatibility) ──
+        // These variables were renamed to PM_VERSION / PM_VERSION_MAJOR / etc.
+        // for multi-package-manager support (npm / pnpm / yarn).
+        // Resolvers delegate to the canonical PM_* names; core.warning is
+        // emitted on first use. The Variable cache ensures the warning
+        // fires at most once per variable per run.
+        NPM_VERSION: async (v: VariableInput) => {
+            warning('"{NPM_VERSION}" is deprecated, use "{PM_VERSION}" instead.');
+            return v.get("PM_VERSION");
+        },
+        NPM_VERSION_MAJOR: async (v: VariableInput) => {
+            warning('"{NPM_VERSION_MAJOR}" is deprecated, use "{PM_VERSION_MAJOR}" instead.');
+            return v.get("PM_VERSION_MAJOR");
+        },
+        NPM_VERSION_MINOR: async (v: VariableInput) => {
+            warning('"{NPM_VERSION_MINOR}" is deprecated, use "{PM_VERSION_MINOR}" instead.');
+            return v.get("PM_VERSION_MINOR");
+        },
+        NPM_VERSION_PATCH: async (v: VariableInput) => {
+            warning('"{NPM_VERSION_PATCH}" is deprecated, use "{PM_VERSION_PATCH}" instead.');
+            return v.get("PM_VERSION_PATCH");
+        },
+
+        // ── Lockfile hash / git ──
+        LOCKFILE_HASH_SHA2_256: (v: VariableInput) => hashCalc(v.lockfilePath, "SHA2_256"),
+        LOCKFILE_HASH_SHA2_512: (v: VariableInput) => hashCalc(v.lockfilePath, "SHA2_512"),
+        LOCKFILE_HASH_SHA3_256: (v: VariableInput) => hashCalc(v.lockfilePath, "SHA3_256"),
+        LOCKFILE_HASH_SHA3_512: (v: VariableInput) => hashCalc(v.lockfilePath, "SHA3_512"),
+        LOCKFILE_GIT_COMMIT_LONG: (v: VariableInput) => fetchFileGitCommitLong(v.lockfilePath),
+        LOCKFILE_GIT_COMMIT_SHORT: async (v: VariableInput) => (await fetchFileGitCommitLong(v.lockfilePath)).slice(0, 7),
+
+        // ── package.json hash / git ──
+        PACKAGEJSON_HASH_SHA2_256: (v: VariableInput) => hashCalc(v.packageJsonPath, "SHA2_256"),
+        PACKAGEJSON_HASH_SHA2_512: (v: VariableInput) => hashCalc(v.packageJsonPath, "SHA2_512"),
+        PACKAGEJSON_HASH_SHA3_256: (v: VariableInput) => hashCalc(v.packageJsonPath, "SHA3_256"),
+        PACKAGEJSON_HASH_SHA3_512: (v: VariableInput) => hashCalc(v.packageJsonPath, "SHA3_512"),
+        PACKAGEJSON_GIT_COMMIT_LONG: (v: VariableInput) => fetchFileGitCommitLong(v.packageJsonPath),
+        PACKAGEJSON_GIT_COMMIT_SHORT: async (v: VariableInput) => (await fetchFileGitCommitLong(v.packageJsonPath)).slice(0, 7),
+    } satisfies Record<string, variableFunction>;
+
+    private readonly cache: Record<string, string> = {};
+
     constructor(
-        private readonly cwd: string,
-        private readonly lockfilePath: string,
-        private readonly packageJsonPath: string,
-        private readonly customVariable: string,
-    ) { }
-    getCache() {
-        return Object.freeze(this.cache);
+        public readonly cwd: string,
+        public readonly lockfilePath: string,
+        public readonly packageJsonPath: string,
+        public readonly customVariable: string,
+        public readonly packageManager: string,
+    ) {}
+
+    getCache(): Readonly<Record<string, string>> {
+        return Object.freeze({ ...this.cache });
     }
-    private async runFunctionBasedOnVariableName(variableName: keyof variableMap, fn: variableFunction): Promise<string> {
-        switch (variableName.split("_").shift()) {
-            case "LOCKFILE":
-                return await fn(this.lockfilePath);
-            case "PACKAGEJSON":
-                return await fn(this.packageJsonPath);
-            default:
-                throw new Error(`Variable "${variableName}" is not defined.`);
-        }
-    }
-    async get(variableName: keyof variableMap | "CUSTOM_VARIABLE"): Promise<string> {
+
+    /**
+     * Type guard: checks whether `name` is a recognised variable name
+     * that can be passed to {@link Variable.get}. Derived automatically
+     * from the keys of {@link VARIABLE_MAP_BASE} — no manual maintenance
+     * needed when adding new variables.
+     */
+    static isVariableName = (name: string): name is VariableName =>
+        Reflect.has(Variable.VARIABLE_MAP_BASE, name);
+
+    async get(variableName: VariableName): Promise<string> {
         debug(`[Variable] variableName: ${variableName}`);
-        if (variableName === "CUSTOM_VARIABLE") {
-            debug(`[Variable] variableName is "CUSTOM_VARIABLE", returning customVariable: ${this.customVariable}`);
-            return this.customVariable;
+
+        // Check cache — derived variables (e.g. NODE_VERSION_MAJOR, PM_VERSION_MAJOR)
+        // return cached values without calling their resolver, which would recursively
+        // call get() for the base version variable.
+        const cached = this.cache[variableName];
+        if (typeof cached === "string") {
+            debug(`[Variable] variableName: ${variableName} is in cache, returning cached value: ${cached}`);
+            return cached;
         }
-        if (!Reflect.has(Variable.VARIABLE_MAP, variableName)) {
-            throw new Error(`Variable "${variableName}" is not defined.`);
-        }
-        const fn = Variable.VARIABLE_MAP[variableName];
-        const cachedValue = this.cache[variableName];
-        if (typeof cachedValue === "string") {
-            debug(`[Variable] variableName: ${variableName} is in cache, returning cached value: ${cachedValue}`);
-            return cachedValue;
-        }
-        debug(`[Variable] variableName: ${variableName} is not in cache...`);
-        let result: string;
-        if (variableName.includes("_HASH_")) {
-            debug(`[Variable] variableName: ${variableName} is a hash variable, calculating hash...`);
-            result = await this.runFunctionBasedOnVariableName(variableName, fn);
-        } else if (variableName.includes("_GIT_COMMIT_")) {
-            debug(`[Variable] variableName: ${variableName} is a git-commit variable, getting git-commit...`);
-            result = await this.runFunctionBasedOnVariableName(variableName, fn);
-        } else {
-            debug(`[Variable] variableName: ${variableName} is not a special variable, running command...`);
-            result = await fn(this.cwd);
-        }
+
+        const resolver = Variable.VARIABLE_MAP_BASE[variableName];
+        const result = await resolver(this);
         this.cache[variableName] = result;
         debug(`[Variable] variableName ${variableName} caches result: ${result}`);
         return result;
     }
 }
+
+// VariableName is derived from VARIABLE_MAP_BASE keys — a precise union of
+// literal string types. Adding a new variable to the map automatically
+// includes it here with no manual maintenance.
+export type VariableName = keyof typeof Variable.VARIABLE_MAP_BASE;
