@@ -51,7 +51,7 @@ jobs:
 
       - name: Installing the dependencies
         if: steps.testIfExist.outputs.EXIST == 'false'
-        uses: AnnAngela/cached_node-modules@f5225ef90d81f9dff57a66c7da631e718a540b9e # v5
+        uses: AnnAngela/cached_node-modules@8336d5acec06f1670b1097dc0b424527a8481659 # v6.0.0
         with:
           command: npm run ci
 
