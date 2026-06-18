@@ -17,8 +17,7 @@
         "lint:write": "eslint --fix .",
         "package": "bash scripts/package.sh",
         "test": "vitest run --coverage",
-        "ci": "export RANDOM_UUID=$(uuidgen) && rm -rdf node_modules && node scripts/ci/before.js && npm ci && node scripts/ci/after.js",
-        "tag": "node scripts/newTag.js"
+        "ci": "export RANDOM_UUID=$(uuidgen) && rm -rdf node_modules && node scripts/ci/before.js && npm ci && node scripts/ci/after.js"
     },
     "engines": {
         "node": "^24.11"
