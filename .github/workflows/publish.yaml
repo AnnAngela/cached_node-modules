@@ -40,7 +40,10 @@ jobs:
           set -euo pipefail
           # version 来自 package.json，非未受信输入；commit message 仅用于日志，不参与判断逻辑。
           CUR=$(node -p "require('./package.json').version")
-          LAST=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || true)
+          # 只匹配精确版本 tag（vX.Y.Z），排除滚动 major tag（如 v6）——
+          # 后者会被 git describe 误取，使 LAST 变成 "6" 而非 "6.0.0"，导致 CUR != LAST 恒成立、误触发。
+          # --sort=-v:refname 按 semver 倒序，head -1 取最新精确版本 tag。
+          LAST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname 2>/dev/null | head -1 | sed 's/^v//' || true)
           echo "current version: $CUR, last tag version: ${LAST:-none}"
           if [ -n "$CUR" ] && [ "$CUR" != "$LAST" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"

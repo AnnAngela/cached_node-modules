@@ -51,29 +51,39 @@ const distFiles = ["dist/index.js", "dist/post.js", "dist/package.json"];
 
 const tmpDir = await mkdtmp({ subDir: "release" });
 
-// 1. 取 master 分支当前 HEAD 的 commit SHA 与 tree SHA（作为新 commit 的 parent 与 base tree）。
-console.info("Fetching master HEAD commit...");
-const headRef = await octokit.git.getRef({ owner, repo: repoName, ref: "heads/master" });
-const headSha = headRef.data.object.sha;
+// 1. 以触发本次 workflow 的 commit（GITHUB_SHA）作为 parent/base tree。
+// 不用 getRef(heads/master) 实时取 master HEAD——publish job 运行期间 master 可能被新 push 更新
+// （如连续合并多个 Release PR），会导致 API 侧基于新 SHA 建 commit/tree，而本地构建的 dist
+// 对应旧 checkout SHA，最终 tag 指向内容与产物不一致。GITHUB_SHA 由 GitHub Actions 注入，
+// 等于 checkout 的 ref，与构建产物保证一致。
+const headSha = process.env.GITHUB_SHA;
+if (!headSha) {
+    throw new Error("GITHUB_SHA is not set");
+}
+console.info("Fetching base commit...");
 const headCommitObj = await octokit.git.getCommit({ owner, repo: repoName, commit_sha: headSha }); // eslint-disable-line camelcase -- octokit API 参数为 snake_case
 const baseTreeSha = headCommitObj.data.tree.sha;
 const committerDate = headCommitObj.data.committer?.date;
-console.info(`master HEAD: ${headSha}, base tree: ${baseTreeSha}`);
+console.info(`base commit: ${headSha}, base tree: ${baseTreeSha}`);
 
-// 2. 基于 base tree 创建新 tree（追加 dist 文件的 blob）。
-// git database API 的 createTree 可直接内联 base64 content，省去单独 createBlob 步骤。
-console.info("Creating tree with dist files...");
+// 2. 为每个 dist 文件单独创建 blob（base64 编码），再在 tree entry 中以 sha 引用。
+// 不能用 createTree 内联 content：① createTree 的 content 字段按原始文本存储、不解码 base64；
+// ② dist/index.js 约 1.5MB，远超 createTree 内联 content 的体积限制，内联会致 API 调用失败。
+// createBlob 专门支持 encoding: base64 且无此体积限制。
+console.info("Creating blobs for dist files...");
 const treeEntries = [];
 for (const filePath of distFiles) {
     const content = await fs.readFile(filePath);
-    treeEntries.push({
-        path: filePath,
-        mode: "100644",
-        type: "blob",
+    const blob = await octokit.git.createBlob({
+        owner,
+        repo: repoName,
         content: content.toString("base64"),
-        // 标记 content 为 base64 编码，避免二进制/特殊字符在 JSON 中出问题
+        encoding: "base64",
     });
+    treeEntries.push({ path: filePath, mode: "100644", type: "blob", sha: blob.data.sha });
+    console.info(`  blob for ${filePath}: ${blob.data.sha}`);
 }
+console.info("Creating tree with dist files...");
 const newTree = await octokit.git.createTree({
     owner,
     repo: repoName,
