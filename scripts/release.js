@@ -49,7 +49,7 @@ const octokit = new (Octokit.plugin(retry))({
 // dist 产物文件——esbuild 构建输出，需纳入 tag commit 以便 Action 用户 checkout 后可用。
 const distFiles = ["dist/index.js", "dist/post.js", "dist/package.json"];
 
-const tmpDir = await mkdtmp({ subDir: "release" });
+const tmpDir = await mkdtmp();
 
 // 1. 以触发本次 workflow 的 commit（GITHUB_SHA）作为 parent/base tree。
 // 不用 getRef(heads/master) 实时取 master HEAD——publish job 运行期间 master 可能被新 push 更新
@@ -120,12 +120,20 @@ console.info(`tag object: ${tagObject.data.sha}`);
 
 // 5. 建 tag ref 指向 tag object SHA。
 console.info(`Creating ref refs/tags/${tag}...`);
-await octokit.git.createRef({
-    owner,
-    repo: repoName,
-    ref: `refs/tags/${tag}`,
-    sha: tagObject.data.sha,
-});
+try {
+    await octokit.git.createRef({
+        owner,
+        repo: repoName,
+        ref: `refs/tags/${tag}`,
+        sha: tagObject.data.sha,
+    });
+} catch (e) {
+    // 重跑场景：精确版本 tag ref 已存在，不应覆盖，仅幂等跳过，使 workflow 可重跑。
+    if (e.status !== 422) {
+        throw e;
+    }
+    console.info(`  refs/tags/${tag} already exists, skipping`);
+}
 
 // 6. 从 CHANGELOG.md 提取本次版本的 release notes 段落。
 console.info("Extracting release notes from CHANGELOG.md...");
@@ -162,14 +170,22 @@ await fs.writeFile(notesFile, notes);
 
 // 7. 创建 GitHub Release（body 取自 CHANGELOG 段落，target 指向含 dist 的 commit）。
 console.info(`Creating GitHub Release for ${tag}...`);
-await octokit.repos.createRelease({
-    owner,
-    repo: repoName,
-    tag_name: tag, // eslint-disable-line camelcase -- octokit API 参数为 snake_case
-    name: tag,
-    body: notes,
-    target_commitish: newCommit.data.sha, // eslint-disable-line camelcase -- octokit API 参数为 snake_case
-});
+try {
+    await octokit.repos.createRelease({
+        owner,
+        repo: repoName,
+        tag_name: tag, // eslint-disable-line camelcase -- octokit API 参数为 snake_case
+        name: tag,
+        body: notes,
+        target_commitish: newCommit.data.sha, // eslint-disable-line camelcase -- octokit API 参数为 snake_case
+    });
+} catch (e) {
+    // 重跑场景：该 tag 的 release 已存在，幂等跳过（不覆盖已有 body），使 workflow 可重跑。
+    if (e.status !== 422) {
+        throw e;
+    }
+    console.info(`  release for ${tag} already exists, skipping`);
+}
 
 // 8. 移动滚动 major tag 指向新 commit（force update ref）。
 // 滚动 tag 每次重指，无法稳定 Verified——可接受，用户锁定版本应优先用精确 tag（如 v6.0.1）。
