@@ -6,6 +6,12 @@ import mkdtmp from "../modules/mkdtmp.js";
 import testLatency from "../modules/testLatency.js";
 console.info("Initialization done.");
 
+// 指针文件：before 写入备份目录路径，after.js 跨进程读取定位，
+// 使 after 无需（也无法）重新创建同一临时目录。
+// 放 .cache/ 下（已 gitignore）；固定文件名——.cache 在 repo 工作区内，
+// hosted runner 每次 fresh checkout 不共享，本地不会并发跑两个 ci，无需实例标识。
+const pointerFile = path.join(".cache", "ci-backup.pointer");
+
 const packageLockFile = "package-lock.json";
 
 const registries = [
@@ -21,9 +27,10 @@ const otherRegistries = registries.filter((registry) => registry !== targetRegis
 console.info("targetRegistry:", targetRegistry);
 console.info("otherRegistries:", otherRegistries);
 console.info("Start to backup", packageLockFile);
-const tmpdir = await mkdtmp({
-    subDir: process.env.RANDOM_UUID,
-});
+const tmpdir = await mkdtmp();
+// 把本次创建的备份目录路径记入指针文件，供 after.js 读取。
+await fs.promises.mkdir(".cache", { recursive: true });
+await fs.promises.writeFile(pointerFile, tmpdir, { mode: 0o600 });
 const backupedPackageLockFile = path.join(tmpdir, packageLockFile);
 await fs.promises.cp(packageLockFile, backupedPackageLockFile, { force: true, preserveTimestamps: true });
 console.info("backup:", backupedPackageLockFile);

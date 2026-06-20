@@ -19,30 +19,48 @@ permissions:
   actions: write
 
 jobs:
+  # 轻量预检 job：仅判断 package.json 的 version 是否相对最近 tag 发生变化。
+  # release-please 合并 Release PR 会让 version 递增；dependabot 改依赖行时 version 不变 → 跳过。
+  # 通过 needs 依赖让 publish job 整体跳过，避免 runner 拉起重步骤，消除空跑。
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.ver.outputs.changed }}
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+          show-progress: false
+      - name: Check if version changed
+        id: ver
+        run: |
+          set -euo pipefail
+          # version 来自 package.json，非未受信输入。
+          CUR=$(node -p "require('./package.json').version")
+          # 只匹配精确版本 tag（vX.Y.Z），排除滚动 major tag（如 v6）和预发布 tag（如 v6.0.0-rc1）——
+          # 前者会被 git describe 误取，使 LAST 变成 "6" 而非 "6.0.0"，导致 CUR != LAST 恒成立、误触发；
+          # 后者使 LAST 指向预发布版本，与稳定 version 比较恒不等、误触发。
+          # grep -v -- '-' 排除含连字符的预发布 tag；--sort=-v:refname 按 semver 倒序，head -1 取最新精确版本 tag。
+          LAST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname 2>/dev/null | grep -v -- '-' | head -1 | sed 's/^v//' || true)
+          echo "current version: $CUR, last tag version: ${LAST:-none}"
+          if [ -n "$CUR" ] && [ "$CUR" != "$LAST" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$CUR" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   publish:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           show-progress: false
 
-      - name: Fetch tag
-        id: tag
-        run: |
-          echo "TAG=v$(npm pkg get version --json | jq -r)" >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
-      - name: Test if the branch exist
-        id: testIfExist
-        run: |
-          if gh api repos/${{ github.repository }}/branches/production/${{ steps.tag.outputs.TAG }} >/dev/null 2>&1; then
-            echo "EXIST=true" >> $GITHUB_OUTPUT
-          else
-            echo "EXIST=false" >> $GITHUB_OUTPUT
-          fi
-          cat $GITHUB_OUTPUT
-
       - name: Use Node.js
-        if: steps.testIfExist.outputs.EXIST == 'false'
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: lts/*
@@ -50,65 +68,27 @@ jobs:
           cache: npm
 
       - name: Installing the dependencies
-        if: steps.testIfExist.outputs.EXIST == 'false'
         uses: AnnAngela/cached_node-modules@8336d5acec06f1670b1097dc0b424527a8481659 # v6.0.0
         with:
           command: npm run ci
 
-      - name: Get major tag
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        id: tagMajor
-        run: |
-          echo "TAG_MAJOR=v$(node -e 'console.info(require(`semver/functions/major`)(`${{ steps.tag.outputs.TAG }}`))')" >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
-
       - name: Check environment
-        if: steps.testIfExist.outputs.EXIST == 'false'
         run: npx eslint --env-info
       - name: Run eslint
-        if: steps.testIfExist.outputs.EXIST == 'false'
         run: npm run lint:check-ci
+      - name: Run tests
+        run: npm test
 
-      - name: Prepare Git
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          git config --global user.email $GHA_BOT_GIT_EMAIL
-          git config --global user.name $GHA_BOT_GIT_NAME
-          git config --global author.email $GHA_BOT_GIT_EMAIL
-          git config --global author.name $GHA_BOT_GIT_NAME
-          git config --global committer.email $GHA_BOT_GIT_EMAIL
-          git config --global committer.name $GHA_BOT_GIT_NAME
-          git config --global push.autoSetupRemote true
-          echo "!dist" >> .gitignore
-      - name: Create new branch
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          git checkout -b production/${{ steps.tag.outputs.TAG }}
-          git push origin production/${{ steps.tag.outputs.TAG }}
       - name: Run package
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          npm run package
+        run: npm run package
       - name: Verify build output
-        if: steps.testIfExist.outputs.EXIST == 'false'
         run: |
           node --check ./dist/index.js && echo "dist/index.js is valid JavaScript."
           node --check ./dist/post.js && echo "dist/post.js is valid JavaScript."
-      - name: Commit package
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          git add .
-          git commit -am "feat: package ${{ steps.tag.outputs.TAG }}"
-      - name: Delete old major tag
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          git push origin :refs/tags/${{ steps.tagMajor.outputs.TAG_MAJOR }}
-      - name: Make tag
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          git tag -m "release: ${{ steps.tag.outputs.TAG }}" ${{ steps.tag.outputs.TAG }}
-          git tag ${{ steps.tagMajor.outputs.TAG_MAJOR }} ${{ steps.tag.outputs.TAG }}
-      - name: Push new tag
-        if: steps.testIfExist.outputs.EXIST == 'false'
-        run: |
-          git push -f --follow-tags
+
+      # 经 GitHub git database API 创建含 dist 的 Verified commit + annotated tag + GitHub Release + 滚动 major tag。
+      # version 通过 env 注入脚本，避免 workflow injection。
+      - name: Release via GitHub API
+        env:
+          RELEASE_VERSION: ${{ needs.check.outputs.version }}
+        run: node scripts/release.js

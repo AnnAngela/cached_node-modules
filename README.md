@@ -259,3 +259,15 @@ We recommend you to use these variables in the `cacheKey` to keep `node_modules`
 
 * `{LOCKFILE_GIT_COMMIT_LONG}` or `{LOCKFILE_GIT_COMMIT_SHORT}`: Prevent outdated cache for updated lockfile, you can also use hash variable of the lockfile.
 * `{OS_NAME}`, `{NODE_VERSION_MAJOR}`(or `{NODE_VERSION}`), `{NODE_ARCH}`: Prevent imcompatible binary files from dependencies like `node-gyp`.
+
+## Releases
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please). The flow is:
+
+1. Commits following [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, etc.) land on `master`.
+2. release-please opens and keeps updated a **Release PR** that bumps the version in `package.json` and appends to `CHANGELOG.md`.
+3. A maintainer reviews and **merges the Release PR**.
+4. Merging pushes the bumped `package.json`, which triggers the `publish` workflow: it runs tests, builds `dist/`, then creates the version tag, the GitHub Release, and moves the rolling major tag — all via the GitHub API (commits/tags are `Verified`).
+5. The rolling major tag (`v6`) always points to the latest release of that major version.
+
+> **Tip:** Pin to a precise tag (e.g. `@v6.0.1`) or a commit SHA for reproducibility. The rolling major tag (`@v6`) tracks the latest but is force-updated on each release.

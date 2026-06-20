@@ -1,0 +1,25 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      # manifest 模式：不设 release-type 输入，让 release-please 读取 release-please-config.json。
+      # skip-github-release: 只维护 Release PR（bump package.json + CHANGELOG），不建 tag、不建 GitHub Release——
+      # 后者交由 publish.yaml 在 Release PR 合并后完成，以便把 dist 构建产物纳入 tag。
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
+        with:
+          skip-github-release: true
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ secrets.GITHUB_TOKEN }}
