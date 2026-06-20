@@ -17,7 +17,7 @@
         "lint:write": "eslint --fix .",
         "package": "bash scripts/package.sh",
         "test": "vitest run --coverage",
-        "ci": "trap 'f=.cache/ci-backup.pointer; [ -f \"$f\" ] && { rm -rf \"$(cat \"$f\")\"; rm -f \"$f\"; }' EXIT && rm -rdf node_modules && node scripts/ci/before.js && npm ci && node scripts/ci/after.js"
+        "ci": "trap 'code=$?; node scripts/ci/after.js; exit $code' EXIT && rm -rdf node_modules && node scripts/ci/before.js && npm ci"
     },
     "engines": {
         "node": "^24.11"
