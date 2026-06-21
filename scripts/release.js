@@ -92,12 +92,14 @@ const newTree = await octokit.git.createTree({
 });
 console.info(`new tree: ${newTree.data.sha}`);
 
-// 3. 创建 commit，parent 指向 master HEAD，author/committer 为 bot（自动 Verified）。
+// 3. 创建 commit，parent 指向触发本次 workflow 的 commit（GITHUB_SHA），author/committer 为 bot（自动 Verified）。
+// message 用 "release:" 非 conventional feat 类型——此 commit 会进 master 历史（见 step 9），
+// 即便被 release-please 扫到，"release:" 不触发版本 bump，避免误判为新 feature。
 console.info("Creating commit with dist...");
 const newCommit = await octokit.git.createCommit({
     owner,
     repo: repoName,
-    message: `feat: package ${tag}`,
+    message: `release: package ${tag}`,
     tree: newTree.data.sha,
     parents: [headSha],
     author: { name: BOT_NAME, email: BOT_EMAIL, date: committerDate },
@@ -199,8 +201,12 @@ try {
         force: true,
     });
     console.info(`  updated existing ${majorTag}`);
-} catch (_e) {
-    // major tag 不存在时创建（轻量 tag，指向 commit，非 annotated）。
+} catch (e) {
+    // 仅当 major tag 确实不存在（404）时才创建（轻量 tag，指向 commit，非 annotated）。
+    // 其他错误（权限/限流等）重新抛出，避免掩盖真实故障、误判为"不存在"去 createRef。
+    if (e.status !== 404) {
+        throw e;
+    }
     console.info(`  ${majorTag} not found, creating...`);
     await octokit.git.createRef({
         owner,
@@ -209,5 +215,21 @@ try {
         sha: newCommit.data.sha,
     });
 }
+
+// 9. 把 dist commit 接入 master 分支历史（fast-forward master 到 dist commit）。
+// 必要性：release-please 依赖"沿 master 历史回溯到上次版本 tag"判定 last-release。
+// 若 dist commit 仅被 tag 引用而不在 master 分支上（detached），release-please 无法沿历史
+// 定位它，会退化为从仓库起点扫描全部 commit，污染 changelog（v6.0.0 即因此触发）。
+// 把 master 推进到 dist commit 后，版本 tag 指向的 commit 即在 master 线性链上，可正常回溯。
+// force: false 仅允许 fast-forward——dist commit 的 parent 即 checkout 时的 GITHUB_SHA（master HEAD），
+// 故可 fast-forward；若期间 master 被新 push 导致非 fast-forward，安全失败比错误覆盖更可取。
+console.info(`Fast-forwarding master -> ${newCommit.data.sha}...`);
+await octokit.git.updateRef({
+    owner,
+    repo: repoName,
+    ref: "heads/master",
+    sha: newCommit.data.sha,
+});
+console.info(`  master updated to ${newCommit.data.sha}`);
 
 console.info(`Release ${tag} completed successfully.`);

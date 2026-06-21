@@ -17,6 +17,13 @@ jobs:
       # manifest 模式：不设 release-type 输入，让 release-please 读取 release-please-config.json。
       # skip-github-release: 只维护 Release PR（bump package.json + CHANGELOG），不建 tag、不建 GitHub Release——
       # 后者交由 publish.yaml 在 Release PR 合并后完成，以便把 dist 构建产物纳入 tag。
+      #
+      # release-please-config.json 的 last-release-sha 是一次性过渡配置：
+      # v6.0.0 tag 指向 detached 的 dist commit（不在 master 历史链上），release-please 无法沿历史回溯，
+      # 故用 last-release-sha=fed92867（master 链上的 6.0.0 release commit）引导 7.0.0 这次发布。
+      # 7.0.0 发版后，publish.yaml 的 release.js 会把 dist commit 接入 master（updateRef heads/master），
+      # v7.0.0 tag 即在 master 历史链上，release-please 可正常回溯——届时须从 config 移除 last-release-sha，
+      # 否则 8.0.0 会从 fed92867 起扫、把 7.0.0 的 commit 重复计入 changelog。
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
         with:
           skip-github-release: true
