@@ -23,12 +23,14 @@ jobs:
   # release-please 合并 Release PR 会让 version 递增；dependabot 改依赖行时 version 不变 → 跳过。
   # 通过 needs 依赖让 publish job 整体跳过，避免 runner 拉起重步骤，消除空跑。
   check:
+    name: Check version changed
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.ver.outputs.changed }}
       version: ${{ steps.ver.outputs.version }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           show-progress: false
@@ -52,11 +54,13 @@ jobs:
           fi
 
   publish:
+    name: Publish release
     needs: check
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           show-progress: false
 

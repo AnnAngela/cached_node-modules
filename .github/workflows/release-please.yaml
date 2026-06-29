@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   release-please:
+    name: Release PR
     runs-on: ubuntu-latest
     steps:
       # manifest 模式：不设 release-type 输入，让 release-please 读取 release-please-config.json。
@@ -24,7 +25,8 @@ jobs:
       # heads/master fast-forward），版本 tag 即在 master 历史链上，release-please 可正常沿 manifest 版本
       # → tag 回溯，两键已从 config 移除。last-release-sha 是 release-please 文档标注的"应避免"逃生舱，会在
       # 回溯循环里截断、与 manifest 版本回溯竞争，tag 回溯正常后保留有污染 changelog 的风险，故不再使用。
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
+      - name: Run release-please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
         with:
           skip-github-release: true
           config-file: release-please-config.json
