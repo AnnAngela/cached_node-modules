@@ -7,11 +7,23 @@ import type { ExecFileCallback } from "./testTypes.js";
 const mockIsFeatureAvailable = vi.fn();
 const mockRestoreCache = vi.fn();
 const mockSaveCache = vi.fn();
+// Mirror the real @actions/cache error class: saveCache throws an instance of
+// ReserveCacheError when the cache key is already reserved by a concurrent job.
+// Defining it inside the mock factory means the `instanceof ReserveCacheError`
+// check in index.ts dispatches on the same prototype the test throws — keeping
+// the class identity consistent without importing the real module in tests.
+class mockReserveCacheError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "ReserveCacheError";
+    }
+}
 
 vi.mock("@actions/cache", () => ({
     isFeatureAvailable: mockIsFeatureAvailable,
     restoreCache: mockRestoreCache,
     saveCache: mockSaveCache,
+    ReserveCacheError: mockReserveCacheError,
 }));
 
 const mockCoreInputs: Record<string, string> = {};
@@ -298,6 +310,73 @@ describe("index", () => {
             // saveCache should have been called since restoreCache returned undefined
             expect(mockSaveCache).toHaveBeenCalled();
             expect(mockSetOutput).toHaveBeenCalledWith("cache-hit", false);
+        });
+    });
+
+    describe("saveCache ReserveCacheError — concurrent key reservation", () => {
+        it("should swallow ReserveCacheError, not flag cacheSaved, and warn", async () => {
+            mockIsFeatureAvailable.mockReturnValue(true);
+            mockRestoreCache.mockResolvedValue(undefined); // cache miss → reaches saveCache
+            mockSaveCache.mockRejectedValue(new mockReserveCacheError("Unable to reserve cache with key test-key, another job may be creating this cache."));
+            setupFiles("npm", "/project/package-lock.json");
+            setInput("packageManager", "npm");
+            setInput("cwd", "/project");
+            setInput("command", "npm ci");
+            setInput("cacheKey", "test-key");
+
+            mockExecFile.mockImplementation(
+                (cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+                    if (cmd === "node") {
+                        cb(null, "linux\n", "");
+                    } else {
+                        cb(null, "ok\n", "");
+                    }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } };
+                },
+            );
+
+            // Must not throw — ReserveCacheError means a concurrent job already
+            // reserved this key (under content-hash keys: same content = correct cache).
+            await expect(import("../index.js")).resolves.toBeDefined();
+
+            const { warning } = await import("@actions/core");
+            const mockWarning = warning as ReturnType<typeof vi.fn>;
+            expect(mockWarning).toHaveBeenCalledWith(expect.stringContaining("test-key"));
+
+            // Critical: cacheSaved MUST stay unset/!=="true". The post step
+            // (post-if: failure()) deletes caches when cacheSaved==="true" —
+            // flagging it here would let a later failing step DELETE the
+            // concurrent run's correct cache via deleteActionsCacheByKey.
+            expect(mockCoreStates.cacheSaved).not.toBe("true");
+
+            // No cache was saved this run, so it is a miss.
+            expect(mockSetOutput).toHaveBeenCalledWith("cache-hit", false);
+            expect(mockSetOutput).toHaveBeenCalledWith("cacheKey", "test-key");
+        });
+
+        it("should rethrow non-ReserveCacheError saveCache failures", async () => {
+            mockIsFeatureAvailable.mockReturnValue(true);
+            mockRestoreCache.mockResolvedValue(undefined);
+            mockSaveCache.mockRejectedValue(new Error("disk full"));
+            setupFiles("npm", "/project/package-lock.json");
+            setInput("packageManager", "npm");
+            setInput("cwd", "/project");
+            setInput("command", "npm ci");
+            setInput("cacheKey", "test-key");
+
+            mockExecFile.mockImplementation(
+                (cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+                    if (cmd === "node") {
+                        cb(null, "linux\n", "");
+                    } else {
+                        cb(null, "ok\n", "");
+                    }
+                    return { stdout: { pipe: vi.fn() }, stderr: { pipe: vi.fn() } };
+                },
+            );
+
+            // Genuine failures must propagate, not be swallowed as "concurrent".
+            await expect(import("../index.js")).rejects.toThrow("disk full");
         });
     });
 

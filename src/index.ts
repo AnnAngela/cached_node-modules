@@ -1,4 +1,4 @@
-import { isFeatureAvailable, restoreCache, saveCache } from "@actions/cache";
+import { isFeatureAvailable, restoreCache, saveCache, ReserveCacheError } from "@actions/cache";
 import { debug, endGroup, getInput, saveState, setOutput, startGroup, warning } from "@actions/core";
 import fs from "node:fs";
 import path from "node:path";
@@ -134,13 +134,36 @@ if (restoreCacheResult === cacheKey) {
     });
     endGroup();
     startGroup("Command finished, start to save cache...");
-    const saveCacheResult = await saveCache([nodeModulesPath], cacheKey, {
-        uploadConcurrency: 8,
-    }, false);
-    debug(`saveCacheResult: ${saveCacheResult}`);
-    saveState("cacheSaved", "true");
-    endGroup();
-    console.info("Cache saved.");
+    try {
+        const saveCacheResult = await saveCache([nodeModulesPath], cacheKey, {
+            uploadConcurrency: 8,
+        }, false);
+        debug(`saveCacheResult: ${saveCacheResult}`);
+        // Only flag cacheSaved on a successful save. The post step runs with
+        // post-if: failure() and deletes the cache keyed by `cacheKey` when
+        // cacheSaved==="true"; if we flagged it here without having actually
+        // saved, a later failing step would DELETE another concurrent run's
+        // correct cache for the same key. Under content-hash keys this is the
+        // expected case — a key collision means identical content was already
+        // reserved, which is exactly the cache we wanted.
+        saveState("cacheSaved", "true");
+        console.info("Cache saved.");
+    } catch (error) {
+        // ReserveCacheError (and its CacheWriteDeniedError subclass) means
+        // another job reserved this key first — under content-hash keys that
+        // implies identical lockfile content, i.e. the desired cache already
+        // exists. Treat as a soft miss: warn and keep going so the job does
+        // not fail purely on a concurrent cache-reservation race.
+        if (error instanceof ReserveCacheError) {
+            warning(`Cache key "${cacheKey}" was already reserved by another job — skipping save. Under content-hash keys this indicates identical content already cached; the cache will be available on a future run.`);
+        } else {
+            // Genuine save failures (disk full, upload error, etc.) must
+            // propagate — they are not benign races.
+            throw error;
+        }
+    } finally {
+        endGroup();
+    }
 }
 
 console.info("Setting outputs...");

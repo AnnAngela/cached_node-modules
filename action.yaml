@@ -14,7 +14,7 @@ inputs:
   cacheKey:
     description: The key of the cache
     required: false
-    default: cached_node-modules:{OS_NAME}:node@{NODE_VERSION_MAJOR}_{NODE_ARCH}:{PM}@{PM_VERSION_MAJOR}:{LOCKFILE}@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
+    default: cached_node-modules:{OS_NAME}:node@{NODE_VERSION_MAJOR}_{NODE_ARCH}:{PM}@{PM_VERSION_MAJOR}:{LOCKFILE}@{LOCKFILE_HASH_SHA2_256}{CUSTOM_VARIABLE}
   customVariable:
     description: The custom variable to insert to the cache key
     required: false

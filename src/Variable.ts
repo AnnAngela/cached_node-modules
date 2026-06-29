@@ -9,11 +9,22 @@ const fetchFileGitCommitLong = async (filePath: string) => {
     debug(`[fetchFileGitCommitLong] octokit.context.repo: ${JSON.stringify(octokit.context.repo)}`);
     debug(`[fetchFileGitCommitLong] octokit.context.ref: ${JSON.stringify(octokit.context.ref)}`);
     debug(`[fetchFileGitCommitLong] octokit.context.sha: ${JSON.stringify(octokit.context.sha)}`);
+    // Anchor the listCommits query to context.sha (the run's checked-out
+    // commit), NOT context.ref. context.ref is a stable string such as
+    // "refs/heads/master", and listCommits resolves it against the *remote
+    // HEAD at the moment of the API call* — which drifts away from the
+    // checked-out commit when multiple commits land on the branch in quick
+    // succession. Under that race, an earlier run could resolve ref to a
+    // later commit and persist its own (older) install result under the
+    // newer commit's cacheKey, deserialising a node_modules that does not
+    // match the lockfile that key points at. Pinning to context.sha keeps
+    // the git-commit anchor aligned with the working tree this run actually
+    // built against.
     const { data: [{ sha }] } = await octokit.repos.listCommits({
         ...octokit.context.repo,
         path: filePath,
         per_page: 1,
-        sha: octokit.context.ref,
+        sha: octokit.context.sha,
     });
     debug(`[fetchFileGitCommitLong] Fetched git commit long of ${filePath}: ${sha}`);
     return sha;

@@ -299,7 +299,14 @@ describe("Variable", () => {
     });
 
     describe("git commit variables", () => {
-        it("should get LOCKFILE_GIT_COMMIT_LONG from octokit", async () => {
+        // Regression lock: fetchFileGitCommitLong MUST anchor its listCommits
+        // query to context.sha (the run's checked-out commit), NOT context.ref.
+        // context.ref is a stable string (e.g. "refs/heads/main") that resolves
+        // to the *remote HEAD at call time* — under concurrent pushes this drifts
+        // away from the checked-out commit, letting one run save its install
+        // result under another commit's cacheKey. Asserting the sha argument
+        // pins this behavior so the decoupling cannot silently regress.
+        it("should get LOCKFILE_GIT_COMMIT_LONG from octokit, querying context.sha not ref", async () => {
             mockListCommits.mockResolvedValue({
                 data: [{ sha: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0" }],
             });
@@ -307,9 +314,13 @@ describe("Variable", () => {
             const v = new Variable("/cwd", "/cwd/lockfile", "/cwd/pkg.json", "", "npm");
             const result = await v.get("LOCKFILE_GIT_COMMIT_LONG");
             expect(result).toBe("a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0");
+            expect(mockListCommits).toHaveBeenCalledWith(expect.objectContaining({
+                sha: "abc123",
+                path: "/cwd/lockfile",
+            }));
         });
 
-        it("should get LOCKFILE_GIT_COMMIT_SHORT (first 7 chars)", async () => {
+        it("should get LOCKFILE_GIT_COMMIT_SHORT (first 7 chars), querying context.sha not ref", async () => {
             mockListCommits.mockResolvedValue({
                 data: [{ sha: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0" }],
             });
@@ -317,24 +328,36 @@ describe("Variable", () => {
             const v = new Variable("/cwd", "/cwd/lockfile", "/cwd/pkg.json", "", "npm");
             const result = await v.get("LOCKFILE_GIT_COMMIT_SHORT");
             expect(result).toBe("a1b2c3d");
+            expect(mockListCommits).toHaveBeenCalledWith(expect.objectContaining({
+                sha: "abc123",
+                path: "/cwd/lockfile",
+            }));
         });
 
-        it("should get PACKAGEJSON_GIT_COMMIT_LONG", async () => {
+        it("should get PACKAGEJSON_GIT_COMMIT_LONG, querying context.sha not ref", async () => {
             mockListCommits.mockResolvedValue({
                 data: [{ sha: "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4" }],
             });
             const v = new Variable("/cwd", "/cwd/lockfile", "/cwd/pkg.json", "", "npm");
             const result = await v.get("PACKAGEJSON_GIT_COMMIT_LONG");
             expect(result).toBe("z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4");
+            expect(mockListCommits).toHaveBeenCalledWith(expect.objectContaining({
+                sha: "abc123",
+                path: "/cwd/pkg.json",
+            }));
         });
 
-        it("should get PACKAGEJSON_GIT_COMMIT_SHORT", async () => {
+        it("should get PACKAGEJSON_GIT_COMMIT_SHORT, querying context.sha not ref", async () => {
             mockListCommits.mockResolvedValue({
                 data: [{ sha: "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4" }],
             });
             const v = new Variable("/cwd", "/cwd/lockfile", "/cwd/pkg.json", "", "npm");
             const result = await v.get("PACKAGEJSON_GIT_COMMIT_SHORT");
             expect(result).toBe("z9y8x7w");
+            expect(mockListCommits).toHaveBeenCalledWith(expect.objectContaining({
+                sha: "abc123",
+                path: "/cwd/pkg.json",
+            }));
         });
     });
 

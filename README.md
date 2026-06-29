@@ -14,7 +14,7 @@ Caching for node_modules to save time, especially in Github-hosted Windows runne
     # The cache key used to restore and save cache
     # You can use magic variables to generate cache key for different OS, Node.js and package manager versions
     # See Section "Magic Variables" below to learn more
-    cacheKey: cached_node-modules:{OS_NAME}:node@{NODE_VERSION_MAJOR}_{NODE_ARCH}:{PM}@{PM_VERSION_MAJOR}:{LOCKFILE}@{LOCKFILE_GIT_COMMIT_SHORT}{CUSTOM_VARIABLE}
+    cacheKey: cached_node-modules:{OS_NAME}:node@{NODE_VERSION_MAJOR}_{NODE_ARCH}:{PM}@{PM_VERSION_MAJOR}:{LOCKFILE}@{LOCKFILE_HASH_SHA2_256}{CUSTOM_VARIABLE}
 
     # Used to fill the `CUSTOM_VARIABLE` variable to make the cache key unique
     # See Section "Custom Variables" below to learn more
@@ -61,11 +61,11 @@ You can get these outputs from the action (The GitHub Actions output is always s
 
 * `cacheKey`: The generated cache key
 
-  Example: `"cached_node-modules:linux:node@20_x64:npm@10:package-lock.json@1a2b3c4"`
+  Example: `"cached_node-modules:linux:node@20_x64:npm@10:package-lock.json@9f2c1a4b8e7d6035c1f2a9b8e7d6035c1f2a9b8e7d6035c1f2a9b8e7d6035c1f2"`
 
 * `variables`: A JSON string contains all the variables **used** in `cacheKey` (also included the variables used internally)
 
-  Example: `"{\"OS_NAME\":\"linux\",\"NODE_VERSION\":\"v20.10.0\",\"NODE_VERSION_MAJOR\":\"20\",\"NODE_ARCH\":\"x64\",\"PM\":\"npm\",\"PM_VERSION\":\"10.2.3\",\"PM_VERSION_MAJOR\":\"10\",\"LOCKFILE_GIT_COMMIT_SHORT\":\"1a2b3c4\"}"`
+  Example: `"{\"OS_NAME\":\"linux\",\"NODE_VERSION\":\"v20.10.0\",\"NODE_VERSION_MAJOR\":\"20\",\"NODE_ARCH\":\"x64\",\"PM\":\"npm\",\"PM_VERSION\":\"10.2.3\",\"PM_VERSION_MAJOR\":\"10\",\"LOCKFILE_HASH_SHA2_256\":\"9f2c1a4b8e7d6035c1f2a9b8e7d6035c1f2a9b8e7d6035c1f2a9b8e7d6035c1f2\"}"`
 
 * `cache-hit`: Whether the cache is hit
 
@@ -157,13 +157,13 @@ You can use these magic variables in the `cacheKey` to generate different cache 
 
 * `{LOCKFILE_GIT_COMMIT_LONG}`:
 
-  Description: The commit hash of the lockfile, return `{LOCKFILE_HASH_SHA3_512}` instead if not in a git repo
+  Description: The commit hash that last touched the lockfile, queried via the GitHub API and anchored to the current run's checked-out commit (`github.sha`). Requires the `githubToken` to have `contents: read`. Unlike the hash variables, this fetches commit metadata from the API rather than reading the local file — if the API call fails (e.g. no token, insufficient scope, or a non-git context), the variable resolves to an error. Prefer `{LOCKFILE_HASH_SHA2_256}` unless you specifically need commit identity.
 
   Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t`
 
 * `{LOCKFILE_GIT_COMMIT_SHORT}`:
 
-  Description: The abbreviated commit hash of the lockfile, return `{LOCKFILE_HASH_SHA3_512}` instead if not in a git repo
+  Description: The abbreviated (7-char) commit hash that last touched the lockfile, queried via the GitHub API and anchored to the current run's checked-out commit (`github.sha`). Same requirements and caveats as `{LOCKFILE_GIT_COMMIT_LONG}`.
 
   Example: `1a2b3c4`
 
@@ -193,13 +193,13 @@ You can use these magic variables in the `cacheKey` to generate different cache 
 
 * `{PACKAGEJSON_GIT_COMMIT_LONG}`:
 
-  Description: The commit hash of the package.json, return `{PACKAGEJSON_HASH_SHA3_512}` instead if not in a git repo
+  Description: The commit hash that last touched the package.json, queried via the GitHub API and anchored to the current run's checked-out commit (`github.sha`). Requires the `githubToken` to have `contents: read`. If the API call fails (no token, insufficient scope, or a non-git context), the variable resolves to an error. Prefer `{PACKAGEJSON_HASH_SHA2_256}` unless you specifically need commit identity.
 
   Example: `1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t`
 
 * `{PACKAGEJSON_GIT_COMMIT_SHORT}`:
 
-  Description: The abbreviated commit hash of the package.json, return `{PACKAGEJSON_HASH_SHA3_512}` instead if not in a git repo
+  Description: The abbreviated (7-char) commit hash that last touched the package.json, queried via the GitHub API and anchored to the current run's checked-out commit (`github.sha`). Same requirements and caveats as `{PACKAGEJSON_GIT_COMMIT_LONG}`.
 
   Example: `1a2b3c4`
 
@@ -257,7 +257,9 @@ steps:
 
 We recommend you to use these variables in the `cacheKey` to keep `node_modules` safe for working in different OS, Node.js and NPM versions:
 
-* `{LOCKFILE_GIT_COMMIT_LONG}` or `{LOCKFILE_GIT_COMMIT_SHORT}`: Prevent outdated cache for updated lockfile, you can also use hash variable of the lockfile.
+* `{LOCKFILE_HASH_SHA2_256}` (or another lockfile hash variable): Prevent stale cache when the lockfile changes. The hash is computed from the local checked-out lockfile content with irrelevant fields stripped (e.g. `packages[""]`, pnpm `snapshots`/`time`, yarn `__metadata`), so it is stable across unrelated metadata churn. This is the default anchor in `cacheKey`.
+
+  `{LOCKFILE_GIT_COMMIT_LONG}` / `{LOCKFILE_GIT_COMMIT_SHORT}` are also available and now anchor to the run's checked-out commit (`github.sha`) rather than the live branch tip, but they query the GitHub API (network + `contents: read` scope) and resolve to an error if the API call fails. Prefer the hash variables unless you specifically need commit identity.
 * `{OS_NAME}`, `{NODE_VERSION_MAJOR}`(or `{NODE_VERSION}`), `{NODE_ARCH}`: Prevent imcompatible binary files from dependencies like `node-gyp`.
 
 ## Releases
