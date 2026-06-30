@@ -142,11 +142,18 @@ console.info("Extracting release notes from CHANGELOG.md...");
 const changelog = await fs.readFile("CHANGELOG.md", "utf8").catch(() => "");
 let notes = "";
 if (changelog) {
-    // release-please 的 CHANGELOG 每个版本段落以 <a name="vx.y.z"></a> 或 ## [vx.y.z] 开头。
-    // 取从本版本标题到下一个版本标题（或文件末）之间的内容。
-    const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // eslint-disable-next-line security/detect-non-literal-regexp -- escaped 由固定 tag 转义而来，无注入风险
-    const versionHeaderRe = new RegExp(`(^|\\n)#{1,3}\\s*(\\[?)${escaped}(\\]?)|<a name="${escaped}"></a>`);
+    // release-please 生成的 CHANGELOG 版本标题形如 `## [6.0.1](compare-url) (date)` ——
+    // 方括号内是纯版本号（无 v 前缀），v 仅出现在 compare URL 与 tag 中。旧版本格式用
+    // `<a name="v6.0.1"></a>`（name 里带 v）。两种格式都容忍：
+    //   - 标题路径用无 v 的 version 匹配方括号内，并容忍 `]` 后的 `(...)` 链接与日期；
+    //   - <a name> 路径用带 v 的 tag 匹配。
+    // `#{1,3}\s*` 行首锚确保不会误匹配正文中出现的版本号。
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const version = tag.replace(/^v/, ""); // tag 去掉 v 前缀，用于匹配方括号内的纯版本号
+    // eslint-disable-next-line security/detect-non-literal-regexp -- esc() 转义了所有正则元字符，无注入风险
+    const versionHeaderRe = new RegExp(
+        `(^|\\n)#{1,3}\\s*\\[?${esc(version)}\\]?(?:\\([^)]*\\))?|<a name="${esc(tag)}"></a>`,
+    );
     const lines = changelog.split("\n");
     let start = -1;
     let end = lines.length;
@@ -165,6 +172,10 @@ if (changelog) {
     }
 }
 if (!notes) {
+    // Fallback：CHANGELOG 缺失或提取失败。此前此处静默 fallback 为 `release: ${tag}`，
+    // 导致 release body 只有一行、丢失 changelog 内容却不报错。现在显式 warning，让
+    // CI 日志可见"提取失败"，避免同类问题再次静默潜伏。
+    console.warn(`⚠ No CHANGELOG section found for ${tag}, falling back to default release notes.`);
     notes = `release: ${tag}`;
 }
 const notesFile = path.join(tmpDir, "notes.md");
