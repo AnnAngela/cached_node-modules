@@ -17,7 +17,7 @@
         "lint:write": "eslint --fix .",
         "package": "bash scripts/package.sh",
         "test": "vitest run --coverage",
-        "ci": "trap 'code=$?; node scripts/ci/after.js; exit $code' EXIT && rm -rdf node_modules && node scripts/ci/before.js && npm ci"
+        "ci": "rm -rdf node_modules && node scripts/ci/selectRegistry.js && npm ci --registry=\"$(cat .cache/ci-registry)\" --replace-registry-host=always"
     },
     "engines": {
         "node": "^24.11"

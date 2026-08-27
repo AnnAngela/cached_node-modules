@@ -8,7 +8,7 @@ import console from "../modules/console.js";
  * mkdtemp 会自动在 prefix 末尾追加 6 个随机字符，消除 randomUUID + mkdir
  * 在名字生成与创建之间的 TOCTOU 窗口（CodeQL js/insecure-temporary-file）。
  *
- * 跨进程复用同一目录（如 before.js → after.js）不应重复调用本函数，
+ * 调用方如需跨进程复用同一目录，不应重复调用本函数，
  * 而应由首次调用方把返回路径经指针文件传递给后续进程。
  */
 export default async () => {
