@@ -33,13 +33,14 @@ export default async (options: mkdtmpOptions = {}) => {
         // mkdtemp works reliably — even when local: true (baseDir ".tmp")
         // or RUNNER_TEMP points to a non-existent directory.
         await fs.promises.mkdir(baseDir, { recursive: true, mode: 0o700 });
-        // Use mkdtemp for atomic directory creation. The trailing X's are
-        // replaced by the OS with random characters, eliminating the TOCTOU
-        // window between name generation and mkdir that randomUUID() + mkdir
-        // would have (CodeQL js/insecure-temporary-file).
+        // Use mkdtemp for atomic directory creation. mkdtemp appends six
+        // random characters behind the prefix, eliminating the TOCTOU window
+        // between name generation and mkdir that randomUUID() + mkdir would
+        // have (CodeQL js/insecure-temporary-file). The prefix must not end
+        // with "X" — Node warns "templates ending with X are not portable".
         const prefix = typeof options.subDir === "string"
-            ? `${join(baseDir, options.subDir)}@XXXXXX`
-            : join(baseDir, "cached_node-modules@XXXXXX");
+            ? `${join(baseDir, options.subDir)}@`
+            : join(baseDir, "cached_node-modules@");
         const tempPath = await fs.promises.mkdtemp(prefix);
         console.log("tempPath:", tempPath);
         return tempPath;
