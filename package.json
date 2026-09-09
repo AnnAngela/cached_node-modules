@@ -45,8 +45,8 @@
         "@types/shell-quote": "^1.7.5",
         "@vitest/coverage-v8": "^5.0.0",
         "esbuild": "^0.28.2",
-        "eslint": "^10.9.1",
-        "memfs": "^4.69.1",
+        "eslint": "^10.10.0",
+        "memfs": "^4.71.0",
         "simple-git": "^3.36.0",
         "typescript": "^6.0.3",
         "vitest": "^5.0.0"
