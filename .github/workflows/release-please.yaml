@@ -26,7 +26,7 @@ jobs:
       # → tag 回溯，两键已从 config 移除。last-release-sha 是 release-please 文档标注的"应避免"逃生舱，会在
       # 回溯循环里截断、与 manifest 版本回溯竞争，tag 回溯正常后保留有污染 changelog 的风险，故不再使用。
       - name: Run release-please
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
+        uses: googleapis/release-please-action@v5.0.0
         with:
           skip-github-release: true
           config-file: release-please-config.json
